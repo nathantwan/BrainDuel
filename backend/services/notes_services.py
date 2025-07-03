@@ -2,12 +2,11 @@ import uuid
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
-from models import TempNote, ClassFolder
+from models import TempNote, ClassFolder, Question, QuestionOption
 from .note_processor import NoteProcessor
 from services.question_generator import QuestionGenerator
 from database import get_db
 from datetime import datetime, timedelta
-from models import Question
 async def upload_notes(
     folder_id: str,
     files: List[UploadFile],
@@ -138,6 +137,53 @@ async def generate_questions(
                 points_value=q_data.get("points", 10)
             )
             db.add(question)
+            db.flush()  # Get the question ID
+            
+            # Create options for all question types to make them compatible with battles
+            if q_data["type"] == "multiple_choice" and "options" in q_data:
+                # Multiple choice questions already have options
+                for option_letter, option_text in q_data["options"].items():
+                    option = QuestionOption(
+                        question_id=question.id,
+                        option_letter=option_letter,
+                        option_text=option_text,
+                        is_correct=(option_letter == q_data["correct_answer"])
+                    )
+                    db.add(option)
+            elif q_data["type"] == "true_false":
+                # Convert true/false to multiple choice with True/False options
+                true_option = QuestionOption(
+                    question_id=question.id,
+                    option_letter="A",
+                    option_text="True",
+                    is_correct=(q_data["correct_answer"].lower() == "true")
+                )
+                false_option = QuestionOption(
+                    question_id=question.id,
+                    option_letter="B",
+                    option_text="False",
+                    is_correct=(q_data["correct_answer"].lower() == "false")
+                )
+                db.add(true_option)
+                db.add(false_option)
+            elif q_data["type"] == "short_answer":
+                # Convert short answer to multiple choice with common answer variations
+                # For now, create 4 generic options and mark the correct one
+                options = [
+                    q_data["correct_answer"],
+                    "Option B",
+                    "Option C", 
+                    "Option D"
+                ]
+                for i, option_text in enumerate(options):
+                    option = QuestionOption(
+                        question_id=question.id,
+                        option_letter=chr(65 + i),  # A, B, C, D
+                        option_text=option_text,
+                        is_correct=(i == 0)  # First option (correct answer) is correct
+                    )
+                    db.add(option)
+            
             saved_questions.append(question)
         
         # Update folder question count

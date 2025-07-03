@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { battleService } from '../services/battle';
+import { authService } from '../services/auth';
 import type { PendingInvite } from '../types/battle';
 
 export const usePendingInvites = () => {
@@ -8,30 +9,32 @@ export const usePendingInvites = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchInvites = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await battleService.getPendingInvites();
-      setInvites(data.invites);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    setError(null);
+    
+    const invites = await battleService.getPendingInvites();
+    setInvites(invites);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    setError(err.message);
+    
+    if (err.message.includes('Session expired')) {
+      router.push('/auth');
     }
-  }, []);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   const dismissInvite = useCallback(async (inviteId: string) => {
     try {
       await battleService.dismissInvite(inviteId);
       setInvites(prev => prev.filter(invite => invite.id !== inviteId));
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to dismiss invite');
     }
   }, []);
-
-  useEffect(() => {
-    fetchInvites();
-  }, [fetchInvites]);
 
   return {
     invites,
@@ -39,5 +42,6 @@ export const usePendingInvites = () => {
     error,
     fetchInvites,
     dismissInvite,
+    resetError: () => setError(null),
   };
 };

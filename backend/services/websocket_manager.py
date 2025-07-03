@@ -136,7 +136,7 @@ class ConnectionManager:
         return list(self.active_connections.keys())
 
     def is_user_connected(self, user_id: str) -> bool:
-        """Check if a specific user is connected"""
+        """Check if a user is currently connected"""
         return user_id in self.active_connections
 
     async def cleanup_stale_connections(self):

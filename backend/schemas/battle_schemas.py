@@ -10,8 +10,8 @@ class CreateBattleRequest(BaseModel):
         description="Leave empty for public battles (use room codes)"
     )
     class_folder_id: str
-    total_questions: int = 10
-    time_limit_seconds: int = 300
+    total_questions: int
+    time_limit_seconds: int
     is_public: bool = Field(
         False, 
         description="True=anyone can join with room code, False=private battle"

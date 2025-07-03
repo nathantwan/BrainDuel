@@ -20,13 +20,18 @@ export const useWebSocket = (userId: string | null) => {
 
     ws.current.onmessage = (event) => {
       try {
+        console.log('WebSocket message received:', event.data);
         const message: WebSocketMessage = JSON.parse(event.data);
         setLastMessage(message);
+        console.log('Parsed message:', message);
         
         // Call specific handler if registered
         const handler = messageHandlers.current.get(message.type);
         if (handler) {
+          console.log('Calling handler for message type:', message.type);
           handler(message);
+        } else {
+          console.log('No handler registered for message type:', message.type);
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);

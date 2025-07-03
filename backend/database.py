@@ -4,8 +4,22 @@ from sqlalchemy.orm import sessionmaker
 from decouple import config
 import os
 
-# Get database URL from environment
-DATABASE_URL = config('DATABASE_URL')
+# Get database URL from environment with fallback
+try:
+    DATABASE_URL = config('DATABASE_URL')
+except:
+    # Fallback to SQLite for development
+    DATABASE_URL = "sqlite:///./brainduel.db"
+    print("⚠️  No DATABASE_URL found, using SQLite fallback")
+
+# Set other required environment variables with fallbacks
+import os
+if not os.getenv('SECRET_KEY'):
+    os.environ['SECRET_KEY'] = 'your-secret-key-here-for-development'
+if not os.getenv('ALGORITHM'):
+    os.environ['ALGORITHM'] = 'HS256'
+if not os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'):
+    os.environ['ACCESS_TOKEN_EXPIRE_MINUTES'] = '30'
 
 # Create SQLAlchemy engine with better configuration
 engine = create_engine(

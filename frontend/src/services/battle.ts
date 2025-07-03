@@ -39,10 +39,9 @@ export const battleService = {
   },
 
   // Battle Actions
-  async submitAnswer(answerRequest: SubmitAnswerRequest): Promise<any> {
+  async submitAnswer(answerRequest: SubmitAnswerRequest): Promise<void> {
     try {
-      const response = await api.post('/battles/submit-answer', answerRequest);
-      return response.data;
+      await api.post('/battles/submit-answer', answerRequest);
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
       const message = axiosError.response?.data?.detail || 
@@ -65,7 +64,7 @@ export const battleService = {
     }
   },
 
-  async declineBattle(battleId: string): Promise<{ status: string }> {
+  async declineBattle(battleId: string): Promise<Battle> {
     try {
       const response = await api.post(`/battles/${battleId}/decline`);
       return response.data;
@@ -92,7 +91,7 @@ export const battleService = {
     }
   },
 
-  async getBattleQuestions(battleId: string): Promise<BattleQuestion[]> {
+  async getBattleQuestions(battleId: string): Promise<{ questions: BattleQuestion[] }> {
     try {
       const response = await api.get(`/battles/questions/${battleId}`);
       return response.data;
@@ -100,7 +99,7 @@ export const battleService = {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
       const message = axiosError.response?.data?.detail || 
                     axiosError.response?.data?.message || 
-                    'Failed to fetch battle questions';
+                    'Failed to get battle questions';
       throw new Error(message);
     }
   },
@@ -126,21 +125,26 @@ export const battleService = {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
       const message = axiosError.response?.data?.detail || 
                     axiosError.response?.data?.message || 
-                    'Failed to fetch battle';
+                    'Failed to get battle';
       throw new Error(message);
     }
   },
 
-  // Battle Invites
-  async getPendingInvites(): Promise<{ invites: PendingInvite[] }> {
+  async getPendingInvites(): Promise<PendingInvite[]> {
     try {
       const response = await api.get('/battles/pending-invites');
+      
+      // Validate response structure
+      if (!Array.isArray(response.data)) {
+        throw new Error('Invalid response format: expected array of invites');
+      }
+
       return response.data;
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
       const message = axiosError.response?.data?.detail || 
                     axiosError.response?.data?.message || 
-                    'Failed to fetch pending invites';
+                    'Failed to fetch invites';
       throw new Error(message);
     }
   },

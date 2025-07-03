@@ -8,9 +8,7 @@ from .battle_services import (
     get_battle_results,
     get_battle_by_id,
     generate_room_code,
-    send_queued_invites_on_connect,
-    get_pending_invites,
-    mark_invite_as_read
+    get_pending_battle_invitations
 )
 from .folder_services import (
     create_folder,
@@ -57,7 +55,5 @@ __all__ = [
     "get_battle_results",
     "get_battle_by_id",
     "generate_room_code",
-    "send_queued_invites_on_connect",
-    "get_pending_invites",
-    "mark_invite_as_read"
+    "get_pending_battle_invitations"
 ]

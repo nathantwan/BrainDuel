@@ -20,7 +20,7 @@ export const useBattleGame = (battleId: string | null) => {
       const data = await battleService.getBattleQuestions(battleId);
       setQuestions(data);
       if (data.length > 0) {
-        setTimeRemaining(data[0].time_limit);
+        setTimeRemaining(data[0].time_limit_seconds);
         setGameStatus('playing');
       }
     } catch (err: any) {
@@ -45,7 +45,7 @@ export const useBattleGame = (battleId: string | null) => {
       if (currentQuestionIndex < questions.length - 1) {
         const nextIndex = currentQuestionIndex + 1;
         setCurrentQuestionIndex(nextIndex);
-        setTimeRemaining(questions[nextIndex].time_limit);
+        setTimeRemaining(questions[nextIndex].time_limit_seconds);
       } else {
         setGameStatus('completed');
         await fetchResults();
@@ -70,7 +70,7 @@ export const useBattleGame = (battleId: string | null) => {
     if (currentQuestionIndex < questions.length - 1) {
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
-      setTimeRemaining(questions[nextIndex].time_limit);
+      setTimeRemaining(questions[nextIndex].time_limit_seconds);
     } else {
       setGameStatus('completed');
       fetchResults();

@@ -32,7 +32,15 @@ export const useBattleWebSocket = ({
   useEffect(() => {
     // Register message handlers
     if (onBattleInvite) {
-      addMessageHandler('BATTLE_INVITE', onBattleInvite);
+      console.log('Registering BATTLE_INVITE and BATTLE_INVITATION handlers');
+      addMessageHandler('BATTLE_INVITE', (data) => {
+        console.log('BATTLE_INVITE received:', data);
+        onBattleInvite(data);
+      });
+      addMessageHandler('BATTLE_INVITATION', (data) => {
+        console.log('BATTLE_INVITATION received:', data);
+        onBattleInvite(data);
+      });
     }
     if (onBattleAccepted) {
       addMessageHandler('BATTLE_ACCEPTED', onBattleAccepted);
@@ -53,6 +61,7 @@ export const useBattleWebSocket = ({
     return () => {
       // Cleanup handlers
       removeMessageHandler('BATTLE_INVITE');
+      removeMessageHandler('BATTLE_INVITATION');
       removeMessageHandler('BATTLE_ACCEPTED');
       removeMessageHandler('BATTLE_DECLINED');
       removeMessageHandler('BATTLE_STARTED');

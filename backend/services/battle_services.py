@@ -10,7 +10,7 @@ import random
 import string
 
 from schemas import CreateBattleRequest, SubmitAnswerRequest, BattleResponse
-from models import Battle, BattleAnswerResponse, Question, User, ClassFolder, PendingInvite
+from models import Battle, BattleAnswerResponse, Question, User, ClassFolder
 from database import get_db
 from .auth import get_current_user
 from .websocket_manager import manager
@@ -24,6 +24,13 @@ def validate_battle_uuid(battle_id: str) -> UUID:
         return UUID(battle_id)
     except ValueError:
         raise HTTPException(400, "Invalid battle ID format")
+
+def validate_uuid(uuid_str: str, field_name: str = "ID") -> UUID:
+    """Validate and convert any UUID string to UUID object"""
+    try:
+        return UUID(uuid_str)
+    except ValueError:
+        raise HTTPException(400, f"Invalid {field_name} format")
 
 def generate_room_code() -> str:
     """Generate a unique 6-character room code"""
@@ -84,7 +91,7 @@ def get_battle_with_validation(battle_id: str, current_user: User, db: Session, 
     return battle
 
 async def send_battle_notification(battle: Battle, current_user: User, opponent: User, folder: ClassFolder, db: Session):
-    """Handle battle notification logic (WebSocket + queuing)"""
+    """Handle battle notification logic (WebSocket only - no offline queuing)"""
     invite_message = {
         "type": "BATTLE_INVITATION",
         "battle": {
@@ -102,116 +109,74 @@ async def send_battle_notification(battle: Battle, current_user: User, opponent:
         
         if message_sent:
             logger.info(f"Battle invite sent via WebSocket to {opponent.username}")
+            return True
         else:
-            logger.info(f"User {opponent.username} not connected, queuing invite")
-            await queue_pending_invite(str(opponent.id), str(battle.id), invite_message, db)
+            logger.warning(f"User {opponent.username} is not online - cannot send invite")
+            return False
             
     except Exception as e:
         logger.error(f"Error sending WebSocket message: {str(e)}")
-        await queue_pending_invite(str(opponent.id), str(battle.id), invite_message, db)
+        return False
 
 # ==================== PENDING INVITE FUNCTIONS ====================
-async def queue_pending_invite(user_id: str, battle_id: str, invite_data: dict, db: Session):
-    """Queue an invite for offline users - expires in 1 hour"""
+async def get_pending_battle_invitations(user_id: str, db: Session) -> List[dict]:
+    """Get all pending battle invitations for a user (battles where they are the opponent)"""
     try:
-        # Check for existing valid invite
-        existing_invite = db.query(PendingInvite).filter(
-            PendingInvite.user_id == user_id,
-            PendingInvite.battle_id == battle_id,
-            PendingInvite.is_read == False,
-            PendingInvite.expires_at > datetime.utcnow()
-        ).first()
+        logger.info(f"Fetching pending battle invitations for user_id: {user_id}")
         
-        if existing_invite:
-            logger.info(f"Valid pending invite already exists for user {user_id} and battle {battle_id}")
-            return
-            
-        pending_invite = PendingInvite(
-            id=str(uuid.uuid4()),
-            user_id=user_id,
-            battle_id=battle_id,
-            invite_data=json.dumps(invite_data),
-            created_at=datetime.utcnow(),
-            is_read=False
-        )
+        # Find battles where the user is the opponent and status is pending
+        pending_battles = db.query(Battle).filter(
+            Battle.opponent_id == user_id,
+            Battle.battle_status == "pending"
+        ).all()
         
-        db.add(pending_invite)
-        db.commit()
-        logger.info(f"Queued pending invite for user {user_id}, expires in 1 hour")
+        logger.info(f"Found {len(pending_battles)} pending battle invitations")
+        
+        result = []
+        for battle in pending_battles:
+            try:
+                # Get challenger and folder info
+                challenger = db.query(User).filter(User.id == battle.challenger_id).first()
+                folder = db.query(ClassFolder).filter(ClassFolder.id == battle.class_folder_id).first()
+                
+                if not challenger or not folder:
+                    logger.warning(f"Missing challenger or folder for battle {battle.id}")
+                    continue
+                
+                invitation = {
+                    "id": str(battle.id),  # Use battle ID as invitation ID
+                    "battle_id": str(battle.id),
+                    "invite_data": {
+                        "type": "BATTLE_INVITATION",
+                        "battle": {
+                            "id": str(battle.id),
+                            "challenger_username": challenger.username,
+                            "class_folder_name": folder.name,
+                            "total_questions": battle.total_questions,
+                            "time_limit_seconds": battle.time_limit_seconds,
+                            "is_public": False
+                        }
+                    },
+                    "created_at": battle.created_at.isoformat(),
+                    "expires_at": None  # Battles don't expire
+                }
+                
+                result.append(invitation)
+                
+            except Exception as e:
+                logger.error(f"Error processing battle invitation {battle.id}: {str(e)}")
+                continue
+                
+        return result
         
     except Exception as e:
-        logger.error(f"Error queuing pending invite: {str(e)}")
-        db.rollback()
-        raise
-
-async def get_pending_invites(user_id: str, db: Session) -> List[dict]:
-    """Get all unread, non-expired pending invites for a user"""
-    try:
-        invites = db.query(PendingInvite).filter(
-            PendingInvite.user_id == user_id,
-            PendingInvite.is_read == False,
-            PendingInvite.expires_at > datetime.utcnow()
-        ).order_by(PendingInvite.created_at.desc()).all()
-        
-        return [{
-            "id": invite.id,
-            "battle_id": invite.battle_id,
-            "invite_data": json.loads(invite.invite_data),
-            "created_at": invite.created_at.isoformat(),
-            "expires_at": invite.expires_at.isoformat()
-        } for invite in invites]
-        
-    except Exception as e:
-        logger.error(f"Error getting pending invites: {str(e)}")
+        logger.error(f"Error getting pending battle invitations for user {user_id}: {str(e)}")
         return []
 
-async def mark_invite_as_read(invite_id: str, user_id: str, db: Session):
-    """Mark a specific invite as read"""
-    try:
-        db.query(PendingInvite).filter(
-            PendingInvite.id == invite_id,
-            PendingInvite.user_id == user_id
-        ).update({"is_read": True})
-        db.commit()
-    except Exception as e:
-        logger.error(f"Error marking invite as read: {str(e)}")
-        db.rollback()
+# Removed: queue_pending_invite - no longer needed with real-time invites
 
-async def send_queued_invites_on_connect(user_id: str, db: Session):
-    """Send all pending invites when user connects"""
-    try:
-        pending_invites = await get_pending_invites(user_id, db)
-        
-        for invite in pending_invites:
-            await manager.send_personal_message(invite["invite_data"], user_id)
-            
-        # Mark all as read
-        if pending_invites:
-            invite_ids = [invite["id"] for invite in pending_invites]
-            db.query(PendingInvite).filter(
-                PendingInvite.id.in_(invite_ids)
-            ).update({"is_read": True}, synchronize_session=False)
-            db.commit()
-            
-        logger.info(f"Sent {len(pending_invites)} queued invites to user {user_id}")
-        
-    except Exception as e:
-        logger.error(f"Error sending queued invites: {str(e)}")
-
-async def cleanup_expired_invites(db: Session):
-    """Clean up expired invites"""
-    try:
-        expired_count = db.query(PendingInvite).filter(
-            PendingInvite.expires_at <= datetime.utcnow()
-        ).delete()
-        
-        db.commit()
-        if expired_count > 0:
-            logger.info(f"Cleaned up {expired_count} expired invites")
-            
-    except Exception as e:
-        logger.error(f"Error cleaning up expired invites: {str(e)}")
-        db.rollback()
+# Removed: get_pending_invites - replaced with get_pending_battle_invitations
+# Removed: mark_invite_as_read, send_queued_invites_on_connect, cleanup_expired_invites - no longer needed
 
 # ==================== MAIN BATTLE FUNCTIONS ====================
 async def create_battle(battle_request: CreateBattleRequest, current_user: User, db: Session) -> BattleResponse:
@@ -233,6 +198,11 @@ async def create_battle(battle_request: CreateBattleRequest, current_user: User,
             if opponent.id == current_user.id:
                 raise HTTPException(400, "Cannot battle yourself")
             
+            # Check if opponent is online
+            is_opponent_online = manager.is_user_connected(str(opponent.id))
+            if not is_opponent_online:
+                raise HTTPException(400, "Opponent is not online. You can only invite users who are currently active.")
+            
             is_public = False
         else:
             # Public battle
@@ -242,7 +212,7 @@ async def create_battle(battle_request: CreateBattleRequest, current_user: User,
                 room_code = generate_room_code()
 
         # Verify class folder
-        folder_id = validate_battle_uuid(battle_request.class_folder_id)
+        folder_id = validate_uuid(battle_request.class_folder_id, "folder ID")
         folder = db.query(ClassFolder).filter(ClassFolder.id == folder_id).first()
         
         if not folder:
@@ -326,6 +296,12 @@ async def accept_battle(battle_id: str, current_user: User, db: Session) -> dict
             "battle": battle_to_dict(battle)
         }, str(battle.challenger_id))
 
+        # Notify opponent that battle has started
+        await manager.send_personal_message({
+            "type": "BATTLE_STARTED",
+            "battle": battle_to_dict(battle)
+        }, str(current_user.id))
+
         return {"status": "joined", "battle": battle_to_dict(battle)}
 
     except HTTPException:
@@ -339,6 +315,7 @@ async def accept_battle(battle_id: str, current_user: User, db: Session) -> dict
 async def submit_answer(answer_request: SubmitAnswerRequest, current_user: User, db: Session):
     """Submit an answer for a battle question"""
     try:
+        logger.info(f"Submitting answer: battle_id={answer_request.battle_id}, question_id={answer_request.question_id}, user_answer={answer_request.user_answer}, time_taken={answer_request.time_taken_seconds}")
         battle = get_battle_with_validation(answer_request.battle_id, current_user, db)
         
         if battle.battle_status != "active":
@@ -434,7 +411,9 @@ async def get_battle_questions(battle_id: str, current_user: User, db: Session):
     """Get questions for a specific battle"""
     battle = get_battle_with_validation(battle_id, current_user, db)
     
-    questions = db.query(Question).filter(
+    questions = db.query(Question).options(
+        joinedload(Question.options)
+    ).filter(
         Question.class_folder_id == battle.class_folder_id
     ).all()
     
@@ -444,8 +423,16 @@ async def get_battle_questions(battle_id: str, current_user: User, db: Session):
     
     return {
         "battle_id": battle_id,
-        "questions": [{"id": str(q.id), "text": q.question_text} for q in selected],
-        "time_limit": battle.time_limit_seconds
+        "questions": [
+            {
+                "id": str(q.id), 
+                "question": q.question_text,
+                "options": [opt.option_text for opt in q.options],
+                "correct_answer": q.correct_answer,
+                "time_limit_seconds": battle.time_limit_seconds
+            } 
+            for q in selected
+        ]
     }
 
 async def get_battle_results(battle_id: str, current_user: User, db: Session):
