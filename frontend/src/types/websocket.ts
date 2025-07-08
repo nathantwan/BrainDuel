@@ -4,10 +4,6 @@ import type { Battle, BattleQuestion, BattleResult } from './battle';
 // Server -> Client Messages
 export type IncomingMessage = 
   | {
-      type: 'BATTLE_INVITATION';
-      battle: Battle;
-    }
-  | {
       type: 'PUBLIC_BATTLE_CREATED';
       room_code: string;
       battle: Battle;
@@ -56,16 +52,6 @@ export type IncomingMessage =
 
 // Client -> Server Messages
 export type OutgoingMessage =
-  | {
-      type: 'ACCEPT_BATTLE';
-      battle_id: string;
-      user_id: string;
-    }
-  | {
-      type: 'DECLINE_BATTLE';
-      battle_id: string;
-      user_id: string;
-    }
   | {
       type: 'JOIN_BATTLE';
       room_code: string;

@@ -141,15 +141,31 @@ async def generate_questions(
             
             # Create options for all question types to make them compatible with battles
             if q_data["type"] == "multiple_choice" and "options" in q_data:
-                # Multiple choice questions already have options
-                for option_letter, option_text in q_data["options"].items():
-                    option = QuestionOption(
-                        question_id=question.id,
-                        option_letter=option_letter,
-                        option_text=option_text,
-                        is_correct=(option_letter == q_data["correct_answer"])
-                    )
-                    db.add(option)
+                # Multiple choice questions now have options as an array
+                options = q_data["options"]
+                if isinstance(options, list):
+                    # Handle array format (new format)
+                    for i, option_text in enumerate(options):
+                        option_letter = chr(65 + i)  # A, B, C, D
+                        is_correct = option_text == q_data["correct_answer"]
+                        option = QuestionOption(
+                            question_id=question.id,
+                            option_letter=option_letter,
+                            option_text=option_text,
+                            is_correct=is_correct
+                        )
+                        db.add(option)
+                elif isinstance(options, dict):
+                    # Handle dict format (old format for backward compatibility)
+                    for option_letter, option_text in options.items():
+                        is_correct = option_letter == q_data["correct_answer"]
+                        option = QuestionOption(
+                            question_id=question.id,
+                            option_letter=option_letter,
+                            option_text=option_text,
+                            is_correct=is_correct
+                        )
+                        db.add(option)
             elif q_data["type"] == "true_false":
                 # Convert true/false to multiple choice with True/False options
                 true_option = QuestionOption(
@@ -167,13 +183,14 @@ async def generate_questions(
                 db.add(true_option)
                 db.add(false_option)
             elif q_data["type"] == "short_answer":
-                # Convert short answer to multiple choice with common answer variations
-                # For now, create 4 generic options and mark the correct one
+                # Convert short answer to multiple choice with better options
+                correct_answer = q_data["correct_answer"]
+                # Create more meaningful options based on the correct answer
                 options = [
-                    q_data["correct_answer"],
-                    "Option B",
-                    "Option C", 
-                    "Option D"
+                    correct_answer,
+                    f"Not {correct_answer}",
+                    "None of the above",
+                    "All of the above"
                 ]
                 for i, option_text in enumerate(options):
                     option = QuestionOption(

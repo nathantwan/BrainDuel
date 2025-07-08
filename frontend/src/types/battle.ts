@@ -14,7 +14,6 @@ export interface Battle {
 }
 
 export interface CreateBattleRequest {
-  opponent_username?: string;
   class_folder_id: string;
   total_questions: number;
   time_limit_seconds: number;
@@ -45,23 +44,17 @@ export interface BattleResult {
   completed_at: string;
 }
 
-export interface PendingInvite {
-  id: string;
+export interface BattleStatus {
   battle_id: string;
-  invite_data: {
-    type: string;
-    battle: {
-      id: string;
-      challenger_username: string;
-      class_folder_name: string;
-      total_questions: number;
-      time_limit_seconds: number;
-      is_public: boolean;
-    };
-  };
-  created_at: string;
-  expires_at: string | null;
+  status: 'pending' | 'active' | 'completed' | 'declined';
+  challenger_id: string;
+  opponent_id: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  winner_id: string | null;
 }
+
+
 
 export interface WebSocketMessage {
   type: string;

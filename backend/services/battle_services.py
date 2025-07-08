@@ -336,6 +336,7 @@ async def submit_answer(answer_request: SubmitAnswerRequest, current_user: User,
         ).first()
         
         if existing_response:
+            logger.warning(f"User {current_user.id} already answered question {answer_request.question_id}")
             raise HTTPException(400, "You already answered this question")
         
         # Calculate score
@@ -368,15 +369,51 @@ async def submit_answer(answer_request: SubmitAnswerRequest, current_user: User,
         
         db.commit()
         
-        # Notify opponent
+        # Check if both users have answered this question
+        challenger_answered = db.query(BattleAnswerResponse).filter(
+            BattleAnswerResponse.battle_id == validate_battle_uuid(answer_request.battle_id),
+            BattleAnswerResponse.question_id == question_uuid,
+            BattleAnswerResponse.user_id == battle.challenger_id
+        ).first()
+        
+        opponent_answered = db.query(BattleAnswerResponse).filter(
+            BattleAnswerResponse.battle_id == validate_battle_uuid(answer_request.battle_id),
+            BattleAnswerResponse.question_id == question_uuid,
+            BattleAnswerResponse.user_id == battle.opponent_id
+        ).first()
+        
+        both_answered = challenger_answered is not None and opponent_answered is not None
+        
+        logger.info(f"Answer submission - Challenger answered: {challenger_answered is not None}, Opponent answered: {opponent_answered is not None}, Both answered: {both_answered}")
+        logger.info(f"Challenger ID: {battle.challenger_id}, Opponent ID: {battle.opponent_id}, Current user ID: {current_user.id}")
+        logger.info(f"Question ID: {answer_request.question_id}")
+        if challenger_answered:
+            logger.info(f"Challenger answer found: {challenger_answered.id}")
+        if opponent_answered:
+            logger.info(f"Opponent answer found: {opponent_answered.id}")
+        
+        # Notify opponent about answer
         opponent_id = battle.opponent_id if current_user.id == battle.challenger_id else battle.challenger_id
         await manager.send_personal_message({
             "type": "opponent_answered",
             "battle_id": answer_request.battle_id,
             "question_id": answer_request.question_id,
             "is_correct": is_correct,
-            "points_earned": points_earned
+            "points_earned": points_earned,
+            "both_answered": both_answered
         }, str(opponent_id))
+        
+        # If both users have answered, notify both to advance to next question
+        if both_answered:
+            logger.info(f"Both users answered question {answer_request.question_id} - broadcasting question_completed")
+            logger.info(f"Sending to users: {str(battle.challenger_id)}, {str(battle.opponent_id)}")
+            await manager.broadcast_to_battle({
+                "type": "question_completed",
+                "battle_id": answer_request.battle_id,
+                "question_id": answer_request.question_id,
+                "next_question_ready": True
+            }, [str(battle.challenger_id), str(battle.opponent_id)])
+            logger.info(f"Question completed message sent to both users")
         
         # Check completion
         await check_battle_completion(answer_request.battle_id, db)

@@ -182,57 +182,41 @@ async def get_battle_by_id_route(
         raise HTTPException(404, "Battle not found")
     return battle
 
-# ==================== BATTLE INVITES ====================
-@router.get("/pending-invites", response_model=List)
-async def get_user_pending_invites(
+@router.get("/{battle_id}/status")
+async def get_battle_status_route(
+    battle_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get all pending invites for the current user"""
+    """Get battle status for polling"""
+    validate_uuid(battle_id, "battle ID")
+    
     try:
-        print(f"=== STARTING INVITE FETCH ===")
-        print(f"User ID: {current_user.id}")
-        print(f"User ID type: {type(current_user.id)}")
+        battle = db.query(Battle).filter(Battle.id == validate_uuid(battle_id, "battle ID")).first()
+        if not battle:
+            raise HTTPException(404, "Battle not found")
         
-        invitations = await handle_service_call(
-            get_pending_battle_invitations, 
-            str(current_user.id), 
-            db
-        )
+        # Check if user is part of this battle
+        if battle.challenger_id != current_user.id and battle.opponent_id != current_user.id:
+            raise HTTPException(403, "You are not part of this battle")
         
-        print(f"Service call successful, got {len(invitations) if invitations else 0} battle invitations")
+        return {
+            "battle_id": str(battle.id),
+            "status": battle.battle_status,
+            "challenger_id": str(battle.challenger_id),
+            "opponent_id": str(battle.opponent_id) if battle.opponent_id else None,
+            "started_at": battle.started_at.isoformat() if battle.started_at else None,
+            "completed_at": battle.completed_at.isoformat() if battle.completed_at else None,
+            "winner_id": str(battle.winner_id) if battle.winner_id else None
+        }
         
-        if not isinstance(invitations, list):
-            print(f"ERROR: Invalid response type: {type(invitations)}")
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid data format from service layer"
-            )
-            
-        print(f"=== RETURNING {len(invitations)} BATTLE INVITATIONS ===")
-        return invitations
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"=== ERROR IN ENDPOINT ===")
-        print(f"Error type: {type(e)}")
-        print(f"Error message: {str(e)}")
-        import traceback
-        print(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        )
+        logger.error(f"Error getting battle status: {str(e)}")
+        raise HTTPException(500, "Internal server error")
 
-@router.delete("/invites/{invite_id}")
-async def dismiss_invite(
-    invite_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Dismiss a pending battle invitation"""
-    # Note: This would need to be implemented differently for battle invitations
-    # For now, just return success since we're not using the old pending invite system
-    return {"message": "Invitation dismissed"}
+
 
 # ==================== WEBSOCKET HANDLER ====================
 @router.websocket("/ws/{user_id}")

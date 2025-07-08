@@ -1,17 +1,37 @@
-import React from 'react';
-import { Loader2, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, Users, Copy, Check } from 'lucide-react';
 
 interface BattleWaitingScreenProps {
   battleId: string;
   opponentUsername?: string;
+  roomCode?: string;
+  isPublic?: boolean;
   onCancel?: () => void;
+  wsConnected?: boolean;
 }
 
 const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
   battleId,
   opponentUsername,
-  onCancel
+  roomCode,
+  isPublic = false,
+  onCancel,
+  wsConnected = false
 }) => {
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const copyRoomCode = async () => {
+    if (roomCode) {
+      try {
+        await navigator.clipboard.writeText(roomCode);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy room code:', err);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
@@ -25,6 +45,28 @@ const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Waiting for Opponent
           </h2>
+          
+          {/* Room Code for Public Battles */}
+          {isPublic && roomCode && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-700 mb-2">Share this room code with others:</p>
+              <div className="flex items-center justify-center space-x-3">
+                <span className="text-2xl font-bold font-mono text-blue-600 tracking-wider">
+                  {roomCode}
+                </span>
+                <button
+                  onClick={copyRoomCode}
+                  className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
+                  title="Copy room code"
+                >
+                  {copiedCode ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
+                </button>
+              </div>
+              {copiedCode && (
+                <p className="text-sm text-green-600 mt-2">Room code copied!</p>
+              )}
+            </div>
+          )}
           
           {/* Battle Info */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -41,10 +83,26 @@ const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
             )}
           </div>
           
+          {/* WebSocket Status */}
+          <div className="mb-4">
+            <div className={`flex items-center justify-center text-sm ${
+              wsConnected ? 'text-green-600' : 'text-yellow-600'
+            }`}>
+              <div className={`w-2 h-2 rounded-full mr-2 ${
+                wsConnected ? 'bg-green-500' : 'bg-yellow-500'
+              }`}></div>
+              {wsConnected ? 'Connected to real-time updates' : 'Connecting to real-time updates...'}
+            </div>
+          </div>
+          
           {/* Status Message */}
           <p className="text-gray-600 mb-6">
-            Your battle invitation has been sent. 
-            {opponentUsername ? ` Waiting for ${opponentUsername} to accept...` : ' Waiting for someone to join...'}
+            {isPublic && !opponentUsername 
+              ? "Waiting for someone to join with your room code..."
+              : opponentUsername 
+                ? `Waiting for ${opponentUsername} to accept...`
+                : "Your battle invitation has been sent. Waiting for someone to join..."
+            }
           </p>
           
           {/* Cancel Button */}

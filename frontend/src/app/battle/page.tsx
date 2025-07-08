@@ -2,15 +2,11 @@
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Users, Plus, Filter, 
-  ArrowRight, Gamepad2, User, Copy, Check,
-  Settings, LogOut, Bell, Clock, Trophy
+  Users, Plus, Gamepad2, User,
+  Settings, LogOut, Bell
 } from 'lucide-react';
 import { useBattles } from '../../hooks/use-battles';
-import { useBattleGame } from '../../hooks/use-battle';
-import { useBattleWebSocket } from '../../hooks/use-battlewebsocket';
-import { usePendingInvites } from '../../hooks/use-invites';
-import type { Battle, CreateBattleRequest, PendingInvite } from '../../types/battle';
+import type { Battle, CreateBattleRequest } from '../../types/battle';
 import { authService } from '../../services/auth';
 import type { User as UserType } from '../../types/auth';
 import { useFolders } from '../../hooks/use-folders';
@@ -22,57 +18,19 @@ const BattleHub = () => {
   const [user, setUser] = useState<UserType | null>(null)
   const [userLoading, setUserLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'join' | 'create'>('join');
-  const [realtimeInvites, setRealtimeInvites] = useState<any[]>([]); // For real-time invites
   
   // Use the battle hooks
   const {
-    battles,
     loading: battlesLoading,
-    error: battlesError,
     createBattle,
     joinBattle,
-    acceptBattle,
-    declineBattle,
     fetchBattles
   } = useBattles();
 
-
-  
   // Memoize the fetch function to avoid dependency issues
   const memoizedFetchBattles = useCallback(() => {
     fetchBattles();
   }, [fetchBattles]);
-
-  // WebSocket integration - only initialize when user is available
-  const {
-    isConnected: wsConnected,
-    acceptBattle: wsAcceptBattle,
-    declineBattle: wsDeclineBattle
-  } = useBattleWebSocket({
-    userId: user?.id || '',
-    onBattleInvite: (data) => {
-      console.log('New battle invite received:', data);
-      console.log('Current realtimeInvites:', realtimeInvites);
-      setRealtimeInvites(prev => {
-        console.log('Updating realtimeInvites from:', prev, 'to:', [...prev, data]);
-        return [...prev, data];
-      });
-      memoizedFetchBattles(); // Refresh battles list
-    },
-    onBattleAccepted: (data) => {
-      console.log('Battle accepted:', data);
-      memoizedFetchBattles();
-    },
-    onBattleDeclined: (data) => {
-      console.log('Battle declined:', data);
-      memoizedFetchBattles();
-    }
-  });
-
-  // Debug realtimeInvites changes
-  useEffect(() => {
-    console.log('realtimeInvites updated:', realtimeInvites);
-  }, [realtimeInvites]);
 
   const fetchUserData = async () => {
     try {
@@ -104,17 +62,7 @@ const BattleHub = () => {
     }
   }
 
-  // Handle battle actions
-  const handleBattleStart = async (battleId: string) => {
-    if (!user) return;
-    
-    try {
-      await joinBattle(battleId);
-      // The battle state will update via the WebSocket handler
-    } catch (error) {
-      console.error('Failed to join battle:', error);
-    }
-  };
+
 
   const handleCreateBattle = async (battleData: CreateBattleRequest) => {
     if (!user) return;
@@ -130,29 +78,7 @@ const BattleHub = () => {
     }
   };
 
-  const handleAcceptBattle = async (battleId: string) => {
-    if (!user) return;
-    
-    try {
-      await acceptBattle(battleId);
-      wsAcceptBattle(battleId);
-      // Navigate to the battle page
-      router.push(`/battle/${battleId}`);
-    } catch (error) {
-      console.error('Failed to accept battle:', error);
-    }
-  };
 
-  const handleDeclineBattle = async (battleId: string) => {
-    if (!user) return;
-    
-    try {
-      await declineBattle(battleId);
-      wsDeclineBattle(battleId, user.id);
-    } catch (error) {
-      console.error('Failed to decline battle:', error);
-    }
-  };
 
 
 
@@ -223,13 +149,7 @@ const BattleHub = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Battle Arena</h2>
-          <p className="text-gray-600">Create battles with room codes or accept pending invites</p>
-          {!wsConnected && (
-            <div className="mt-2 text-sm text-yellow-600 flex items-center">
-              <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
-              Connecting to real-time updates...
-            </div>
-          )}
+          <p className="text-gray-600">Create battles with room codes or join existing battles</p>
         </div>
 
         <div className="flex justify-center mb-8">
@@ -261,17 +181,11 @@ const BattleHub = () => {
 
         {activeTab === 'join' ? (
           <JoinBattleTab 
-  userId={user.id}
-  joinBattle={joinBattle}
-  loading={battlesLoading}
-  realtimeInvites={realtimeInvites}
-  onAcceptInvite={handleAcceptBattle}
-  onDeclineInvite={handleDeclineBattle}
-  setRealtimeInvites={setRealtimeInvites}
-/>
+            joinBattle={joinBattle}
+            loading={battlesLoading}
+          />
         ) : (
           <CreateBattleTab 
-            userId={user.id}
             onCreateBattle={handleCreateBattle}
             loading={battlesLoading}
           />
@@ -282,24 +196,15 @@ const BattleHub = () => {
 };
 
 interface JoinBattleTabProps {
-  userId: string;
   joinBattle: (roomCode: string) => Promise<Battle>;
   loading: boolean;
-  realtimeInvites: any[];
-  onAcceptInvite: (battleId: string) => Promise<void>;
-  onDeclineInvite: (battleId: string) => Promise<void>;
-  setRealtimeInvites: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 const JoinBattleTab: React.FC<JoinBattleTabProps> = ({ 
-  userId,
   joinBattle,
-  loading,
-  realtimeInvites,
-  onAcceptInvite,
-  onDeclineInvite,
-  setRealtimeInvites
+  loading
 }) => {
+  const router = useRouter();
   const [roomCode, setRoomCode] = useState('');
   const [joinError, setJoinError] = useState(''); // For room code join errors
 
@@ -312,14 +217,26 @@ const JoinBattleTab: React.FC<JoinBattleTabProps> = ({
     try {
       setJoinError('');
       const battle = await joinBattle(roomCode.trim().toUpperCase());
+      console.log('Join battle response:', battle);
+      
+      // Validate battle ID before navigation
+      if (!battle || !battle.id) {
+        console.error('Invalid battle response:', battle);
+        console.error('Battle object keys:', battle ? Object.keys(battle) : 'null');
+        setJoinError('Invalid battle response from server');
+        return;
+      }
+      
       // Clear the input after successful join
       setRoomCode('');
+      console.log('Navigating to battle:', battle.id);
       router.push(`/battle/${battle.id}`); // Navigate to the battle room
       // Note: The actual navigation to battle room should be handled
       // by the parent component or via the joinBattle implementation
     } catch (error) {
       console.error('Failed to join battle:', error);
-      setJoinError(error.message || 'Failed to join battle. Please check the room code.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to join battle. Please check the room code.';
+      setJoinError(errorMessage);
     }
   };
 
@@ -342,85 +259,50 @@ const JoinBattleTab: React.FC<JoinBattleTabProps> = ({
       {/* Room Code Input */}
       <div className="bg-white rounded-2xl p-6 shadow-lg">
         <h3 className="text-lg font-bold text-gray-800 mb-4">Join Battle with Room Code</h3>
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Enter room code..."
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-            maxLength={6}
-          />
-          <button
-            onClick={handleJoinByRoomCode}
-            disabled={!roomCode.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-300 text-white font-semibold rounded-xl transition-all"
-          >
-            Join Battle
-          </button>
-        </div>
+                  <div className="flex gap-4">
+            <input
+              type="text"
+              placeholder="Enter room code..."
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              maxLength={6}
+            />
+            <button
+              onClick={handleJoinByRoomCode}
+              disabled={!roomCode.trim()}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-300 text-white font-semibold rounded-xl transition-all"
+            >
+              Join Battle
+            </button>
+          </div>
+          {joinError && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{joinError}</p>
+            </div>
+          )}
       </div>
 
-      {/* Pending Invites */}
-      {realtimeInvites.length > 0 ? (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-yellow-500">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Battle Invitations</h3>
-          <div className="space-y-3">
-            {realtimeInvites.map((invite, index) => (
-              <div key={index} className="flex justify-between items-center p-4 bg-yellow-50 rounded-lg">
-                <div>
-                  <p className="font-medium">{invite.battle?.challenger_username} challenged you to a battle</p>
-                  <p className="text-sm text-gray-600">{invite.battle?.class_folder_name}</p>
-                  <p className="text-xs text-gray-500">
-                    {invite.battle?.total_questions} questions • {Math.floor(invite.battle?.time_limit_seconds / 60)} minutes
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      onAcceptInvite(invite.battle.id);
-                      setRealtimeInvites(realtimeInvites.filter((_, i) => i !== index));
-                    }}
-                    className="px-4 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 transition-colors"
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => {
-                      onDeclineInvite(invite.battle.id);
-                      setRealtimeInvites(realtimeInvites.filter((_, i) => i !== index));
-                    }}
-                    className="px-4 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition-colors"
-                  >
-                    Decline
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-          <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-500 mb-2">No pending invites</h3>
-          <p className="text-gray-400">Use a room code to join a battle or wait for someone to invite you!</p>
-        </div>
-      )}
+      {/* Info Section */}
+      <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+        <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-500 mb-2">Join a Battle</h3>
+        <p className="text-gray-400">Enter a room code to join an existing battle!</p>
+      </div>
     </div>
   );
 };
 
 interface CreateBattleTabProps {
-  userId: string;
   onCreateBattle: (data: CreateBattleRequest) => Promise<any>;
   loading: boolean;
 }
 
 const CreateBattleTab: React.FC<CreateBattleTabProps> = ({ 
-  userId,
   onCreateBattle,
   loading
 }) => {
+  const router = useRouter();
   // Use the folders hook to get real data
   const { getMyFolders, loading: foldersLoading, error: foldersError } = useFolders();
   const [availableFolders, setAvailableFolders] = useState<FolderResponse[]>([]);
@@ -428,9 +310,6 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
   const [selectedFolder, setSelectedFolder] = useState('');
   const [numQuestions, setNumQuestions] = useState(5);
   const [timeLimit, setTimeLimit] = useState(300);
-  const [opponentUsername, setOpponentUsername] = useState('');
-  const [createdBattle, setCreatedBattle] = useState<{roomCode: string; battleId: string} | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   // Fetch folders when component mounts
   useEffect(() => {
@@ -451,50 +330,31 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
     }
 
     const battleData: CreateBattleRequest = {
-      opponent_username: opponentUsername.trim() || undefined,
       class_folder_id: selectedFolder,
       total_questions: numQuestions,
       time_limit_seconds: timeLimit,
-      is_public: !opponentUsername.trim(),
+      is_public: true,
     };
     console.log(numQuestions)
     try {
       const result = await onCreateBattle(battleData);
       
-      // If no specific opponent, show the room code
-      if (!opponentUsername.trim() && result?.room_code) {
-        setCreatedBattle({
-          roomCode: result.room_code,
-          battleId: result.id || result.battle_id
-        });
+      // Navigate directly to the battle page instead of showing room code screen
+      if (result?.id || result?.battle_id) {
+        const battleId = result.id || result.battle_id;
+        router.push(`/battle/${battleId}`);
       }
       
       // Reset form
       setSelectedFolder('');
       setNumQuestions(5);
       setTimeLimit(300);
-      setOpponentUsername('');
     } catch (error) {
       console.error('Failed to create battle:', error);
     }
   };
 
-  const copyRoomCode = async () => {
-    if (createdBattle?.roomCode) {
-      try {
-        await navigator.clipboard.writeText(createdBattle.roomCode);
-        setCopiedCode(true);
-        setTimeout(() => setCopiedCode(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy room code:', err);
-      }
-    } 
-  };
 
-  const createAnotherBattle = () => {
-    setCreatedBattle(null);
-    setCopiedCode(false);
-  };
 
   // Show loading state while fetching folders
   if (foldersLoading) {
@@ -528,55 +388,7 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
     );
   }
 
-  // Show room code after creating a public battle
-  if (createdBattle) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-          <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <Trophy className="h-8 w-8 text-green-600" />
-          </div>
-          
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Battle Created!</h2>
-          <p className="text-gray-600 mb-6">Share this room code with others to join your battle</p>
-          
-          <div className="bg-gray-50 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-500 mb-2">Room Code</p>
-            <div className="flex items-center justify-center space-x-3">
-              <span className="text-3xl font-bold font-mono text-blue-600 tracking-wider">
-                {createdBattle.roomCode}
-              </span>
-              <button
-                onClick={copyRoomCode}
-                className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
-                title="Copy room code"
-              >
-                {copiedCode ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
-              </button>
-            </div>
-            {copiedCode && (
-              <p className="text-sm text-green-600 mt-2">Room code copied to clipboard!</p>
-            )}
-          </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={createAnotherBattle}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all"
-            >
-              Create Another Battle
-            </button>
-            <button
-              onClick={() => {/* TODO: Navigate to battle waiting room */}}
-              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all"
-            >
-              Go to Battle Room
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -639,24 +451,7 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Invite Specific Opponent (Optional)
-            </label>
-            <input
-              type="text"
-              placeholder="Enter username..."
-              value={opponentUsername}
-              onChange={(e) => setOpponentUsername(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              {opponentUsername.trim() 
-                ? "This will send a private invite to the specified user" 
-                : "Leave empty to create a battle with a room code that anyone can join"
-              }
-            </p>
-          </div>
+
 
           <button
             onClick={handleCreateBattle}

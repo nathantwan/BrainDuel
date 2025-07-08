@@ -6,7 +6,7 @@ import {
   SubmitAnswerRequest,
   BattleQuestion,
   BattleResult,
-  PendingInvite
+  BattleStatus
 } from '../types/battle';
 
 export const battleService = {
@@ -28,6 +28,10 @@ export const battleService = {
   async joinBattleWithCode(roomCode: string): Promise<Battle> {
     try {
       const response = await api.post(`/battles/join/${roomCode}`);
+      // Handle nested response structure from backend
+      if (response.data && response.data.battle) {
+        return response.data.battle;
+      }
       return response.data;
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
@@ -51,31 +55,7 @@ export const battleService = {
     }
   },
 
-  async acceptBattle(battleId: string): Promise<Battle> {
-    try {
-      const response = await api.post(`/battles/${battleId}/accept`);
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
-      const message = axiosError.response?.data?.detail || 
-                    axiosError.response?.data?.message || 
-                    'Failed to accept battle';
-      throw new Error(message);
-    }
-  },
 
-  async declineBattle(battleId: string): Promise<Battle> {
-    try {
-      const response = await api.post(`/battles/${battleId}/decline`);
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
-      const message = axiosError.response?.data?.detail || 
-                    axiosError.response?.data?.message || 
-                    'Failed to decline battle';
-      throw new Error(message);
-    }
-  },
 
   // Battle Data
   async getMyBattles(): Promise<Battle[]> {
@@ -130,35 +110,18 @@ export const battleService = {
     }
   },
 
-  async getPendingInvites(): Promise<PendingInvite[]> {
+  async getBattleStatus(battleId: string): Promise<BattleStatus> {
     try {
-      const response = await api.get('/battles/pending-invites');
-      
-      // Validate response structure
-      if (!Array.isArray(response.data)) {
-        throw new Error('Invalid response format: expected array of invites');
-      }
-
+      const response = await api.get(`/battles/${battleId}/status`);
       return response.data;
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
       const message = axiosError.response?.data?.detail || 
                     axiosError.response?.data?.message || 
-                    'Failed to fetch invites';
+                    'Failed to get battle status';
       throw new Error(message);
     }
   },
 
-  async dismissInvite(inviteId: string): Promise<{ message: string }> {
-    try {
-      const response = await api.delete(`/battles/invites/${inviteId}`);
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
-      const message = axiosError.response?.data?.detail || 
-                    axiosError.response?.data?.message || 
-                    'Failed to dismiss invite';
-      throw new Error(message);
-    }
-  },
+
 };

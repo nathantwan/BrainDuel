@@ -44,30 +44,7 @@ export const useBattles = () => {
     }
   }, []);
 
-  const acceptBattle = useCallback(async (battleId: string) => {
-    try {
-      setError(null);
-      const updatedBattle = await battleService.acceptBattle(battleId);
-      setBattles(prev => prev.map(b => b.id === battleId ? updatedBattle : b));
-      return updatedBattle;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    }
-  }, []);
 
-  const declineBattle = useCallback(async (battleId: string) => {
-    try {
-      setError(null);
-      await battleService.declineBattle(battleId);
-      setBattles(prev => prev.map(b => 
-        b.id === battleId ? { ...b, battle_status: 'declined' } : b
-      ));
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    }
-  }, []);
 
   useEffect(() => {
     fetchBattles();
@@ -80,7 +57,5 @@ export const useBattles = () => {
     fetchBattles,
     createBattle,
     joinBattle,
-    acceptBattle,
-    declineBattle,
   };
 };

@@ -67,7 +67,9 @@ class ConnectionManager:
             delivered_count = 0
             for invite in pending_invites:
                 try:
-                    success = await self.send_personal_message(invite.invite_data, user_id)
+                    # Parse the JSON string from invite_data
+                    invite_message = json.loads(invite.invite_data)
+                    success = await self.send_personal_message(invite_message, user_id)
                     if success:
                         # Mark as read
                         invite.is_read = True
@@ -113,6 +115,8 @@ class ConnectionManager:
 
     async def broadcast_to_battle(self, message: dict, user_ids: List[str]):
         """Broadcast message to specific battle participants"""
+        logger.info(f"Broadcasting battle message to users: {user_ids}")
+        logger.info(f"Message type: {message.get('type', 'unknown')}")
         sent_count = 0
         for user_id in user_ids:
             if user_id in self.active_connections:
@@ -124,6 +128,7 @@ class ConnectionManager:
                     else:
                         await websocket.send_text(message)
                     sent_count += 1
+                    logger.info(f"Successfully sent message to user {user_id}")
                 except Exception as e:
                     logger.error(f"Failed to send battle message to user {user_id}: {str(e)}")
                     self.disconnect(user_id)
