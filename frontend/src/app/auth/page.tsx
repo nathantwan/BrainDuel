@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Mail, User, Lock, Gamepad2 } from 'lucide-react'
+import { Mail, User, Lock } from 'lucide-react'
 import { authService } from '../../services/auth'
 import { AlertMessage } from '../../components/ui/'
 import { InputField } from '../../components/ui/'
@@ -213,32 +213,32 @@ export default function AuthPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full">
-              <Gamepad2 className="h-8 w-8 text-white" />
+            <div className="bg-gradient-to-r from-blue-800 to-purple-900 p-2 rounded-full">
+              <img src="/icons/brainduel1.svg" alt="BrainDuel" className="h-16 w-16" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">BrainDuel</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-white mb-2">BrainDuel</h1>
+          <p className="text-gray-300">
             {isLogin ? 'Welcome back! Sign in to continue' : 'Create your account to start dueling'}
           </p>
         </div>
 
         {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-700">
           {/* Toggle Buttons */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+          <div className="flex bg-gray-700 rounded-lg p-1 mb-6">
             <button
               type="button"
               onClick={() => switchMode(true)}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                 isLogin
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gray-600 text-white shadow-sm'
+                : 'text-gray-300 hover:text-white'
               }`}
             >
               Sign In
@@ -248,8 +248,8 @@ export default function AuthPage() {
               onClick={() => switchMode(false)}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
                 !isLogin
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gray-600 text-white shadow-sm'
+                : 'text-gray-300 hover:text-white'
               }`}
             >
               Sign Up
@@ -340,15 +340,15 @@ export default function AuthPage() {
               {signupData.password && (
                 <div className="mb-2">
                   <div className="flex justify-between mb-1">
-                    <span className="text-xs text-gray-600">Password strength:</span>
-                    <span className="text-xs font-medium">
+                    <span className="text-xs text-gray-400">Password strength:</span>
+                    <span className="text-xs font-medium text-gray-300">
                       {passwordStrength < 2 ? 'Weak' : 
                        passwordStrength < 4 ? 'Medium' : 'Strong'}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-700 rounded-full h-2">
                     <div 
-                      className={`h-2 rounded-full ${strengthColors[passwordStrength - 1] || 'bg-gray-200'}`}
+                      className={`h-2 rounded-full ${strengthColors[passwordStrength - 1] || 'bg-gray-700'}`}
                       style={{ width: `${(passwordStrength / 5) * 100}%` }}
                     ></div>
                   </div>
@@ -384,17 +384,17 @@ export default function AuthPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-gray-800 text-gray-400">Or continue with</span>
               </div>
             </div>
             
             <button
               type="button"
               disabled
-              className="mt-4 w-full bg-gray-100 text-gray-400 py-3 rounded-lg font-medium cursor-not-allowed flex items-center justify-center space-x-2"
+              className="mt-4 w-full bg-gray-700 text-gray-500 py-3 rounded-lg font-medium cursor-not-allowed flex items-center justify-center space-x-2 border border-gray-600"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -408,7 +408,7 @@ export default function AuthPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-gray-400 mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>

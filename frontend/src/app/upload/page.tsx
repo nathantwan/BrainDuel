@@ -9,7 +9,6 @@ import {
   CheckCircle, 
   AlertCircle,
   ArrowLeft,
-  Gamepad2,
   Zap,
   Folder,
   Save,
@@ -273,8 +272,8 @@ export default function UploadNotesPage() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div className="flex items-center space-x-3">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                  <Gamepad2 className="h-6 w-6 text-white" />
+                <div className="bg-gradient-to-r from-blue-800 to-purple-900 p-2 rounded-full">
+                  <img src="/icons/brainduel1.svg" alt="BrainDuel" className="h-16 w-16" />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">BrainDuel</h1>

@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Users, Plus, Gamepad2, User,
+  Users, Plus, User,
   Settings, LogOut, Bell
 } from 'lucide-react';
 import { useBattles } from '../../hooks/use-battles';
@@ -106,38 +106,38 @@ const BattleHub = () => {
   // Show loading state while fetching user
   if (userLoading || !user) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading your profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <header className="bg-gray-800 shadow-sm border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Gamepad2 className="h-6 w-6 text-white" />
+              <div className="bg-gradient-to-r from-blue-800 to-purple-900 p-2 rounded-full">
+                <img src="/icons/brainduel1.svg" alt="BrainDuel" className="h-16 w-16" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">BrainDuel</h1>
+              <h1 className="text-xl font-bold text-white">BrainDuel</h1>
             </div>
 
             <div className="flex items-center space-x-4">
-              <button className="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+              <button className="flex items-center space-x-2 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
                 <User className="h-5 w-5" />
                 <span className="hidden sm:block font-medium">{user.username}</span>
               </button>
-              <button className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
+              <button className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
                 <Settings className="h-5 w-5" />
               </button>
               <button 
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900 transition-colors"
               >
                 <LogOut className="h-5 w-5" />
               </button>
@@ -148,18 +148,18 @@ const BattleHub = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Battle Arena</h2>
-          <p className="text-gray-600">Create battles with room codes or join existing battles</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Battle Arena</h2>
+          <p className="text-gray-300">Create battles with room codes or join existing battles</p>
         </div>
 
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-2xl p-1 shadow-md">
+          <div className="bg-gray-700 rounded-2xl p-1 shadow-md">
             <button
               onClick={() => setActiveTab('join')}
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 activeTab === 'join' 
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm' 
-                  : 'text-gray-600 hover:text-blue-500'
+                  : 'text-gray-300 hover:text-blue-400'
               }`}
             >
               <Users className="w-5 h-5 inline mr-2" />
@@ -170,7 +170,7 @@ const BattleHub = () => {
               className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 activeTab === 'create' 
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm' 
-                  : 'text-gray-600 hover:text-blue-500'
+                  : 'text-gray-300 hover:text-blue-400'
               }`}
             >
               <Plus className="w-5 h-5 inline mr-2" />
@@ -244,8 +244,8 @@ const JoinBattleTab: React.FC<JoinBattleTabProps> = ({
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading invites...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading invites...</p>
         </div>
       </div>
     );
@@ -257,36 +257,36 @@ const JoinBattleTab: React.FC<JoinBattleTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Room Code Input */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Join Battle with Room Code</h3>
+      <div className="bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-700">
+        <h3 className="text-lg font-bold text-white mb-4">Join Battle with Room Code</h3>
                   <div className="flex gap-4">
             <input
               type="text"
               placeholder="Enter room code..."
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="flex-1 px-4 py-3 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono bg-gray-700 text-white placeholder-gray-400"
               maxLength={6}
             />
             <button
               onClick={handleJoinByRoomCode}
               disabled={!roomCode.trim()}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-300 text-white font-semibold rounded-xl transition-all"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-600 text-white font-semibold rounded-xl transition-all"
             >
               Join Battle
             </button>
           </div>
           {joinError && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{joinError}</p>
+            <div className="mt-3 p-3 bg-red-900 border border-red-700 rounded-lg">
+              <p className="text-red-300 text-sm">{joinError}</p>
             </div>
           )}
       </div>
 
       {/* Info Section */}
-      <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
-        <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-500 mb-2">Join a Battle</h3>
+      <div className="bg-gray-800 rounded-2xl p-8 shadow-lg text-center border border-gray-700">
+        <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-300 mb-2">Join a Battle</h3>
         <p className="text-gray-400">Enter a room code to join an existing battle!</p>
       </div>
     </div>
@@ -359,11 +359,11 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
   // Show loading state while fetching folders
   if (foldersLoading) {
     return (
-      <div className="max-w-2xl mx-auto bg-white rounded-2xl p-8 shadow-lg">
+      <div className="max-w-2xl mx-auto bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-700">
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your folders...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p className="text-gray-300">Loading your folders...</p>
           </div>
         </div>
       </div>
@@ -373,13 +373,13 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
   // Show error if folders failed to load
   if (foldersError) {
     return (
-      <div className="max-w-2xl mx-auto bg-white rounded-2xl p-8 shadow-lg">
-        <div className="text-center text-red-500">
+      <div className="max-w-2xl mx-auto bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-700">
+        <div className="text-center text-red-400">
           <h3 className="text-lg font-medium mb-2">Failed to load folders</h3>
           <p className="text-sm">{foldersError}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Try Again
           </button>
@@ -392,18 +392,18 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-2xl p-8 shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Create New Battle</h2>
+      <div className="bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-700">
+        <h2 className="text-2xl font-bold text-white mb-6">Create New Battle</h2>
         
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Select Course Folder
             </label>
             <select
               value={selectedFolder}
               onChange={(e) => setSelectedFolder(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white"
             >
               <option value="">Choose a folder...</option>
               {availableFolders.map((folder) => (
@@ -415,7 +415,7 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Number of Questions
             </label>
             <input
@@ -424,25 +424,25 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
               max="20"
               value={numQuestions}
               onChange={(e) => setNumQuestions(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
             />
 
 
-            <div className="flex justify-between text-sm text-gray-500 mt-1">
+            <div className="flex justify-between text-sm text-gray-400 mt-1">
               <span>5</span>
-              <span className="font-medium text-blue-600">{numQuestions} questions</span>
+              <span className="font-medium text-blue-400">{numQuestions} questions</span>
               <span>20</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Time Limit (minutes)
             </label>
             <select
               value={timeLimit}
               onChange={(e) => setTimeLimit(parseInt(e.target.value))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white"
             >
               <option value={300}>5 minutes</option>
               <option value={600}>10 minutes</option>
@@ -456,7 +456,7 @@ const CreateBattleTab: React.FC<CreateBattleTabProps> = ({
           <button
             onClick={handleCreateBattle}
             disabled={loading || !selectedFolder}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-300 text-white font-semibold py-4 px-6 rounded-xl transition-all flex items-center justify-center"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-all flex items-center justify-center"
           >
             {loading ? (
               <>

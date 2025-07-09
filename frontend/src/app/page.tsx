@@ -11,8 +11,7 @@ import {
   Target, 
   Clock, 
   Sparkles,
-  ArrowRight,
-  Gamepad2
+  ArrowRight
 } from 'lucide-react';
 
 export default function WelcomePage() {
@@ -33,8 +32,8 @@ export default function WelcomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Gamepad2 className="h-6 w-6 text-white" />
+              <div className="bg-gradient-to-r from-blue-800 to-purple-900 p-2 rounded-full">
+                <img src="/icons/brainduel1.svg" alt="BrainDuel" className="h-16 w-16" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-white">BrainDuel</h1>
@@ -284,8 +283,8 @@ export default function WelcomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-6">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Gamepad2 className="h-6 w-6 text-white" />
+              <div className="bg-gradient-to-r from-blue-800 to-purple-900 p-2 rounded-full">
+                <img src="/icons/brainduel1.svg" alt="BrainDuel" className="h-16 w-16" />
               </div>
               <h3 className="text-xl font-bold">BrainDuel</h3>
             </div>
