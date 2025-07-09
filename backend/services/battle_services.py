@@ -339,14 +339,30 @@ async def submit_answer(answer_request: SubmitAnswerRequest, current_user: User,
             logger.warning(f"User {current_user.id} already answered question {answer_request.question_id}")
             raise HTTPException(400, "You already answered this question")
         
-        # Calculate score
+        # Calculate score with improved scoring system
         is_correct = answer_request.user_answer.strip().lower() == question.correct_answer.strip().lower()
         points_earned = 0
         
         if is_correct:
             base_points = question.points_value
-            speed_bonus = max(0, (battle.time_limit_seconds - answer_request.time_taken_seconds) / battle.time_limit_seconds * 0.5)
-            points_earned = int(base_points * (1 + speed_bonus))
+            
+            # Speed bonus: faster answers get more points (up to 50% bonus)
+            time_ratio = answer_request.time_taken_seconds / battle.time_limit_seconds
+            speed_bonus = max(0, (1 - time_ratio) * 0.5)  # 0% to 50% bonus based on speed
+            
+            # Difficulty bonus: harder questions get more points
+            difficulty_multiplier = {
+                'easy': 1.0,
+                'medium': 1.2,
+                'hard': 1.5
+            }.get(question.difficulty_level, 1.0)
+            
+            points_earned = int(base_points * (1 + speed_bonus) * difficulty_multiplier)
+            
+            logger.info(f"Score calculation: base={base_points}, speed_bonus={speed_bonus:.2f}, difficulty_mult={difficulty_multiplier}, final={points_earned}")
+        else:
+            # Penalty for wrong answers (optional - currently 0 points)
+            points_earned = 0
         
         # Save response
         battle_response = BattleAnswerResponse(
@@ -421,7 +437,7 @@ async def submit_answer(answer_request: SubmitAnswerRequest, current_user: User,
         return {
             "is_correct": is_correct,
             "points_earned": points_earned,
-            "explanation": question.explanation if is_correct else None
+            "explanation": question.explanation if not is_correct else None
         }
         
     except HTTPException:
@@ -466,6 +482,7 @@ async def get_battle_questions(battle_id: str, current_user: User, db: Session):
                 "question": q.question_text,
                 "options": [opt.option_text for opt in q.options],
                 "correct_answer": q.correct_answer,
+                "explanation": q.explanation,
                 "time_limit_seconds": battle.time_limit_seconds
             } 
             for q in selected
@@ -473,7 +490,7 @@ async def get_battle_questions(battle_id: str, current_user: User, db: Session):
     }
 
 async def get_battle_results(battle_id: str, current_user: User, db: Session):
-    """Get detailed battle results"""
+    """Get detailed battle results with comprehensive statistics"""
     battle = get_battle_with_validation(battle_id, current_user, db)
     
     challenger = db.query(User).filter(User.id == battle.challenger_id).first()
@@ -489,23 +506,60 @@ async def get_battle_results(battle_id: str, current_user: User, db: Session):
         BattleAnswerResponse.user_id == battle.opponent_id
     ).all()
     
+    # Calculate detailed statistics
+    challenger_correct = len([a for a in challenger_answers if a.is_correct])
+    opponent_correct = len([a for a in opponent_answers if a.is_correct])
+    
+    challenger_avg_time = sum(a.time_taken_seconds for a in challenger_answers) / len(challenger_answers) if challenger_answers else 0
+    opponent_avg_time = sum(a.time_taken_seconds for a in opponent_answers) / len(opponent_answers) if opponent_answers else 0
+    
+    challenger_accuracy = (challenger_correct / len(challenger_answers) * 100) if challenger_answers else 0
+    opponent_accuracy = (opponent_correct / len(opponent_answers) * 100) if opponent_answers else 0
+    
+    # Determine winner reason
+    winner_reason = "not_completed"
+    if battle.battle_status == "completed":
+        if battle.challenger_score > battle.opponent_score:
+            winner_reason = "higher_score"
+        elif battle.opponent_score > battle.challenger_score:
+            winner_reason = "higher_score"
+        elif challenger_correct > opponent_correct:
+            winner_reason = "more_correct_answers"
+        elif opponent_correct > challenger_correct:
+            winner_reason = "more_correct_answers"
+        elif challenger_avg_time < opponent_avg_time:
+            winner_reason = "faster_average_time"
+        elif opponent_avg_time < challenger_avg_time:
+            winner_reason = "faster_average_time"
+        else:
+            winner_reason = "complete_tie"
+    
     return {
         "battle_id": battle_id,
         "battle_status": battle.battle_status,
+        "total_questions": battle.total_questions,
         "challenger": {
             "username": challenger.username,
             "score": battle.challenger_score,
-            "correct_answers": len([a for a in challenger_answers if a.is_correct]),
-            "total_answers": len(challenger_answers)
+            "correct_answers": challenger_correct,
+            "total_answers": len(challenger_answers),
+            "accuracy": round(challenger_accuracy, 1),
+            "average_time": round(challenger_avg_time, 2),
+            "total_time": sum(a.time_taken_seconds for a in challenger_answers)
         },
         "opponent": {
             "username": opponent.username,
             "score": battle.opponent_score,
-            "correct_answers": len([a for a in opponent_answers if a.is_correct]),
-            "total_answers": len(opponent_answers)
+            "correct_answers": opponent_correct,
+            "total_answers": len(opponent_answers),
+            "accuracy": round(opponent_accuracy, 1),
+            "average_time": round(opponent_avg_time, 2),
+            "total_time": sum(a.time_taken_seconds for a in opponent_answers)
         },
         "winner_id": str(battle.winner_id) if battle.winner_id else None,
-        "completed_at": battle.completed_at
+        "winner_reason": winner_reason,
+        "completed_at": battle.completed_at.isoformat() if battle.completed_at else None,
+        "started_at": battle.started_at.isoformat() if battle.started_at else None
     }
 
 async def get_battle_by_id(battle_id: str, current_user: User, db: Session) -> BattleResponse:
@@ -525,7 +579,7 @@ async def get_battle_by_id(battle_id: str, current_user: User, db: Session) -> B
     return create_battle_response(battle, battle.challenger, battle.opponent, battle.class_folder)
 
 async def check_battle_completion(battle_id: str, db: Session):
-    """Check if battle is complete and update status"""
+    """Check if battle is complete and update status with improved winner determination"""
     battle = db.query(Battle).filter(Battle.id == validate_battle_uuid(battle_id)).first()
     if not battle or battle.battle_status != "active":
         return
@@ -546,19 +600,79 @@ async def check_battle_completion(battle_id: str, db: Session):
         battle.battle_status = "completed"
         battle.completed_at = datetime.utcnow()
         
-        # Determine winner
-        if battle.challenger_score > battle.opponent_score:
-            battle.winner_id = battle.challenger_id
-        elif battle.opponent_score > battle.challenger_score:
-            battle.winner_id = battle.opponent_id
+        # Get detailed statistics for winner determination
+        challenger_responses = db.query(BattleAnswerResponse).filter(
+            BattleAnswerResponse.battle_id == battle.id,
+            BattleAnswerResponse.user_id == battle.challenger_id
+        ).all()
         
+        opponent_responses = db.query(BattleAnswerResponse).filter(
+            BattleAnswerResponse.battle_id == battle.id,
+            BattleAnswerResponse.user_id == battle.opponent_id
+        ).all()
+        
+        # Calculate additional metrics
+        challenger_correct = len([r for r in challenger_responses if r.is_correct])
+        opponent_correct = len([r for r in opponent_responses if r.is_correct])
+        challenger_avg_time = sum(r.time_taken_seconds for r in challenger_responses) / len(challenger_responses) if challenger_responses else 0
+        opponent_avg_time = sum(r.time_taken_seconds for r in opponent_responses) / len(opponent_responses) if opponent_responses else 0
+        
+        # Determine winner with tie-breaking logic
+        winner_id = None
+        winner_reason = "tie"
+        
+        if battle.challenger_score > battle.opponent_score:
+            winner_id = battle.challenger_id
+            winner_reason = "higher_score"
+        elif battle.opponent_score > battle.challenger_score:
+            winner_id = battle.opponent_id
+            winner_reason = "higher_score"
+        else:
+            # Tie in score - check correct answers
+            if challenger_correct > opponent_correct:
+                winner_id = battle.challenger_id
+                winner_reason = "more_correct_answers"
+            elif opponent_correct > challenger_correct:
+                winner_id = battle.opponent_id
+                winner_reason = "more_correct_answers"
+            else:
+                # Still tied - check average time (faster wins)
+                if challenger_avg_time < opponent_avg_time:
+                    winner_id = battle.challenger_id
+                    winner_reason = "faster_average_time"
+                elif opponent_avg_time < challenger_avg_time:
+                    winner_id = battle.opponent_id
+                    winner_reason = "faster_average_time"
+                else:
+                    # Complete tie - no winner
+                    winner_id = None
+                    winner_reason = "complete_tie"
+        
+        battle.winner_id = winner_id
         db.commit()
         
-        # Notify players
-        await manager.broadcast_to_battle({
+        # Prepare detailed results
+        results = {
             "type": "battle_completed",
             "battle_id": str(battle.id),
-            "challenger_score": battle.challenger_score,
-            "opponent_score": battle.opponent_score,
-            "winner_id": str(battle.winner_id) if battle.winner_id else None
-        }, [str(battle.challenger_id), str(battle.opponent_id)])
+            "challenger": {
+                "score": battle.challenger_score,
+                "correct_answers": challenger_correct,
+                "total_answers": len(challenger_responses),
+                "average_time": round(challenger_avg_time, 2)
+            },
+            "opponent": {
+                "score": battle.opponent_score,
+                "correct_answers": opponent_correct,
+                "total_answers": len(opponent_responses),
+                "average_time": round(opponent_avg_time, 2)
+            },
+            "winner_id": str(winner_id) if winner_id else None,
+            "winner_reason": winner_reason,
+            "completed_at": battle.completed_at.isoformat()
+        }
+        
+        logger.info(f"Battle {battle.id} completed. Winner: {winner_id}, Reason: {winner_reason}")
+        
+        # Notify players
+        await manager.broadcast_to_battle(results, [str(battle.challenger_id), str(battle.opponent_id)])

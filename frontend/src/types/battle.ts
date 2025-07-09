@@ -32,16 +32,36 @@ export interface BattleQuestion {
   question: string;
   options: string[];
   correct_answer: string;
+  explanation?: string;
   time_limit_seconds: number;
 }
 
 export interface BattleResult {
   battle_id: string;
-  winner_id?: string;
-  challenger_score: number;
-  opponent_score: number;
+  battle_status: string;
   total_questions: number;
-  completed_at: string;
+  challenger: {
+    username: string;
+    score: number;
+    correct_answers: number;
+    total_answers: number;
+    accuracy: number;
+    average_time: number;
+    total_time: number;
+  };
+  opponent: {
+    username: string;
+    score: number;
+    correct_answers: number;
+    total_answers: number;
+    accuracy: number;
+    average_time: number;
+    total_time: number;
+  };
+  winner_id: string | null;
+  winner_reason: string;
+  completed_at: string | null;
+  started_at: string | null;
 }
 
 export interface BattleStatus {

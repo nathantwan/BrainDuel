@@ -6,6 +6,7 @@ import { battleService } from '../../../services/battle';
 import { authService } from '../../../services/auth';
 import BattleWaitingScreen from '../../../components/quiz/BattleWaitingScreen';
 import BattleGameScreen from '../../../components/quiz/BattleGameScreen';
+import BattleResultsScreen from '../../../components/quiz/BattleResultsScreen';
 import { Battle, BattleQuestion, BattleResult } from '../../../types/battle';
 import { WebSocketMessage } from '../../../types/websocket';
 
@@ -24,6 +25,8 @@ const BattlePage = () => {
   
   // Game state
   const [battleResults, setBattleResults] = useState<any>(null);
+  const [currentScore, setCurrentScore] = useState(0);
+  const [opponentScore, setOpponentScore] = useState(0);
   
   // WebSocket message state for BattleGameScreen
   const [opponentAnswered, setOpponentAnswered] = useState<any>(null);
@@ -122,7 +125,7 @@ const BattlePage = () => {
   }, [battleId, wsConnected, lastOpponentCheck]);
 
   // WebSocket message handler - simplified with no stale closures
-  const handleWebSocketMessage = useCallback((message: any) => {
+  const handleWebSocketMessage = useCallback(async (message: any) => {
     console.log('=== WEBSOCKET MESSAGE RECEIVED ===');
     console.log('Message type:', message.type);
     console.log('Message data:', message);
@@ -142,7 +145,30 @@ const BattlePage = () => {
     
     if (message.type === 'BATTLE_COMPLETED' || message.type === 'battle_completed') {
       console.log('=== BATTLE COMPLETED ===');
-      setBattleResults(message.results || message.battle);
+      console.log('Battle completion message:', message);
+      
+      // Clean up intervals
+      if (fallbackPollingInterval.current) {
+        clearInterval(fallbackPollingInterval.current);
+        fallbackPollingInterval.current = null;
+      }
+      if (battleStatusInterval.current) {
+        clearInterval(battleStatusInterval.current);
+        battleStatusInterval.current = null;
+      }
+      
+      // Fetch detailed results from the API
+      try {
+        const detailedResults = await battleService.getBattleResults(battleId);
+        console.log('Fetched detailed results:', detailedResults);
+        setBattleResults(detailedResults);
+      } catch (error) {
+        console.error('Failed to fetch battle results:', error);
+        // Fallback to message data if API call fails
+        const results = message.results || message.battle || message;
+        setBattleResults(results);
+      }
+      
       setBattleState('completed');
       return;
     }
@@ -155,6 +181,12 @@ const BattlePage = () => {
       console.log('=== OPPONENT ANSWERED - UPDATING STATE ===');
       console.log('Opponent answered message data:', message);
       console.log('Both answered flag:', message.both_answered);
+      
+      // Update opponent score if provided
+      if (message.points_earned !== undefined) {
+        setOpponentScore(prev => prev + message.points_earned);
+      }
+      
       // Force update with timestamp to ensure re-render
       setOpponentAnswered({
         ...message,
@@ -375,7 +407,7 @@ const BattlePage = () => {
       const userTimeSpent = getCurrentQuestionTime();
       console.log('User time spent:', userTimeSpent, 'seconds');
       
-      await battleService.submitAnswer({
+      const response = await battleService.submitAnswer({
         battle_id: battleId,
         question_id: questionId,
         user_answer: answer,
@@ -383,6 +415,12 @@ const BattlePage = () => {
       });
       
       console.log('=== USER ANSWER SUBMITTED ===');
+      console.log('Answer response:', response);
+      
+      // Update current user's score if points were earned
+      if (response && response.points_earned !== undefined) {
+        setCurrentScore(prev => prev + response.points_earned);
+      }
       
       // Reset timer
       setCurrentQuestionStartTime(null);
@@ -394,11 +432,9 @@ const BattlePage = () => {
     }
   };
 
-  const handleBattleComplete = (results: any) => {
+  const handleBattleComplete = async (results: any) => {
     console.log('=== BATTLE COMPLETED ===');
     console.log('Results:', results);
-    setBattleResults(results);
-    setBattleState('completed');
     
     // Clean up intervals
     if (fallbackPollingInterval.current) {
@@ -409,6 +445,19 @@ const BattlePage = () => {
       clearInterval(battleStatusInterval.current);
       battleStatusInterval.current = null;
     }
+    
+    // Fetch detailed results from the API
+    try {
+      const detailedResults = await battleService.getBattleResults(battleId);
+      console.log('Fetched detailed results:', detailedResults);
+      setBattleResults(detailedResults);
+    } catch (error) {
+      console.error('Failed to fetch battle results:', error);
+      // Fallback to provided results if API call fails
+      setBattleResults(results);
+    }
+    
+    setBattleState('completed');
   };
 
   const handleCancelBattle = async () => {
@@ -444,10 +493,10 @@ const BattlePage = () => {
   // Render logic
   if (battleState === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading battle...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading battle...</p>
         </div>
       </div>
     );
@@ -455,10 +504,10 @@ const BattlePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-900 mb-2">Error</h2>
-          <p className="text-red-700 mb-4">{error}</p>
+          <h2 className="text-2xl font-bold text-red-400 mb-2">Error</h2>
+          <p className="text-red-300 mb-4">{error}</p>
           <button
             onClick={() => router.push('/battle')}
             className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -496,40 +545,26 @@ const BattlePage = () => {
         onTimerPause={pauseQuestionTimer}
         onTimerResume={resumeQuestionTimer}
         getCurrentTime={getCurrentQuestionTime}
+        currentScore={currentScore}
+        opponentScore={opponentScore}
       />
     );
   }
 
   if (battleState === 'completed') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Battle Complete!</h2>
-          <p className="text-gray-600 mb-4">
-            {battleResults ? 'Results calculated!' : 'Results will be available soon.'}
-          </p>
-          {battleResults && (
-            <div className="bg-white rounded-lg p-6 mb-4 shadow-md max-w-2xl">
-              <pre className="text-sm text-gray-700 overflow-auto">
-                {JSON.stringify(battleResults, null, 2)}
-              </pre>
-            </div>
-          )}
-          <button
-            onClick={() => router.push('/battle')}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Back to Battle Hub
-          </button>
-        </div>
-      </div>
+      <BattleResultsScreen
+        results={battleResults}
+        currentUserId={user?.id || ''}
+        onBackToHub={() => router.push('/battle')}
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
       <div className="text-center">
-        <p className="text-gray-600">Unknown battle state: {battleState}</p>
+        <p className="text-gray-300">Unknown battle state: {battleState}</p>
         <button
           onClick={() => router.push('/battle')}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-4"

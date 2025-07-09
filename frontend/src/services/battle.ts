@@ -43,9 +43,10 @@ export const battleService = {
   },
 
   // Battle Actions
-  async submitAnswer(answerRequest: SubmitAnswerRequest): Promise<void> {
+  async submitAnswer(answerRequest: SubmitAnswerRequest): Promise<any> {
     try {
-      await api.post('/battles/submit-answer', answerRequest);
+      const response = await api.post('/battles/submit-answer', answerRequest);
+      return response.data;
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
       const message = axiosError.response?.data?.detail || 

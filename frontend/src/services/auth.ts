@@ -8,7 +8,7 @@ interface QueuedRequest {
 }
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -111,7 +111,7 @@ export const authService = {
     try {
 
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`,
         {
           email: credentials.email,
           password: credentials.password,
@@ -122,7 +122,7 @@ export const authService = {
       
       // Get user data after successful login
       const userResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/me`,
         {
           headers: {
             'Authorization': `Bearer ${tokenData.access_token}`

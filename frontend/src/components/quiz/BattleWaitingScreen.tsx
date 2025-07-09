@@ -33,8 +33,8 @@ const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+      <div className="bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 border border-gray-700">
         <div className="text-center">
           {/* Loading Animation */}
           <div className="mb-6">
@@ -42,42 +42,42 @@ const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
           </div>
           
           {/* Title */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-white mb-4">
             Waiting for Opponent
           </h2>
           
           {/* Room Code for Public Battles */}
           {isPublic && roomCode && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-700 mb-2">Share this room code with others:</p>
+            <div className="bg-blue-900 border border-blue-700 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-200 mb-2">Share this room code with others:</p>
               <div className="flex items-center justify-center space-x-3">
-                <span className="text-2xl font-bold font-mono text-blue-600 tracking-wider">
+                <span className="text-2xl font-bold font-mono text-blue-300 tracking-wider">
                   {roomCode}
                 </span>
                 <button
                   onClick={copyRoomCode}
-                  className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
+                  className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
                   title="Copy room code"
                 >
-                  {copiedCode ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
+                  {copiedCode ? <Check className="h-5 w-5 text-green-400" /> : <Copy className="h-5 w-5" />}
                 </button>
               </div>
               {copiedCode && (
-                <p className="text-sm text-green-600 mt-2">Room code copied!</p>
+                <p className="text-sm text-green-400 mt-2">Room code copied!</p>
               )}
             </div>
           )}
           
           {/* Battle Info */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="bg-gray-700 rounded-lg p-4 mb-6 border border-gray-600">
             <div className="flex items-center justify-center mb-2">
-              <Users className="w-5 h-5 text-gray-500 mr-2" />
-              <span className="text-sm font-medium text-gray-700">
+              <Users className="w-5 h-5 text-gray-400 mr-2" />
+              <span className="text-sm font-medium text-gray-200">
                 Battle #{battleId.slice(0, 8)}
               </span>
             </div>
             {opponentUsername && (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-300">
                 Inviting: <span className="font-medium">{opponentUsername}</span>
               </p>
             )}
@@ -96,7 +96,7 @@ const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
           </div>
           
           {/* Status Message */}
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-300 mb-6">
             {isPublic && !opponentUsername 
               ? "Waiting for someone to join with your room code..."
               : opponentUsername 
@@ -109,7 +109,7 @@ const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
           {onCancel && (
             <button
               onClick={onCancel}
-              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               Cancel Battle
             </button>

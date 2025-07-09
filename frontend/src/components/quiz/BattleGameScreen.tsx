@@ -6,6 +6,7 @@ interface BattleQuestion {
   question: string;
   options: string[];
   correct_answer: string;
+  explanation?: string;
   time_limit_seconds: number;
 }
 
@@ -20,6 +21,8 @@ interface BattleGameScreenProps {
   onTimerPause?: () => void;
   onTimerResume?: () => void;
   getCurrentTime?: () => number;
+  currentScore?: number;
+  opponentScore?: number;
 }
 
 const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
@@ -32,7 +35,9 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
   onQuestionStart,
   onTimerPause,
   onTimerResume,
-  getCurrentTime
+  getCurrentTime,
+  currentScore = 0,
+  opponentScore = 0
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -171,46 +176,65 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Battle Complete!</h2>
-          <p className="text-gray-600">Calculating results...</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Battle Complete!</h2>
+          <p className="text-gray-300">Calculating results...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex justify-between items-center">
+        <div className="bg-gray-800 rounded-lg shadow-md p-4 mb-6 border border-gray-700">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-gray-300">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </span>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-400">
                 Battle #{battleId.slice(0, 8)}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-blue-500" />
-              <span className="text-lg font-bold text-gray-900">
+              <Clock className="w-5 h-5 text-blue-400" />
+              <span className="text-lg font-bold text-white">
                 {formatTime(displayTime)}
               </span>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-400">
                 (Your thinking time)
               </span>
+            </div>
+          </div>
+          
+          {/* Score Display */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-300">You:</span>
+                <span className="text-lg font-bold text-blue-400">{currentScore}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-300">Opponent:</span>
+                <span className="text-lg font-bold text-red-400">{opponentScore}</span>
+              </div>
+            </div>
+            <div className="text-sm text-gray-400">
+              {currentScore > opponentScore ? 'You\'re leading!' : 
+               opponentScore > currentScore ? 'Opponent is leading' : 
+               'Tied!'}
             </div>
           </div>
         </div>
 
         {/* Question Card */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <div className="bg-gray-800 rounded-lg shadow-md p-6 mb-6 border border-gray-700">
+          <h2 className="text-xl font-semibold text-white mb-6">
             {currentQuestion.question}
           </h2>
 
@@ -223,11 +247,11 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
                 disabled={isAnswered}
                 className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
                   selectedAnswer === option
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-blue-500 bg-blue-900 text-white'
+                    : 'border-gray-600 hover:border-gray-500 hover:bg-gray-700 bg-gray-800'
                 } ${isAnswered ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
               >
-                <span className="font-medium text-gray-900">{option}</span>
+                <span className="font-medium text-gray-100">{option}</span>
               </button>
             ))}
           </div>
@@ -238,7 +262,7 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
               <button
                 onClick={() => handleAnswerSubmit(selectedAnswer)}
                 disabled={!selectedAnswer}
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
               >
                 Submit Answer
               </button>
@@ -247,14 +271,23 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
 
           {/* Answer Feedback */}
           {isAnswered && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-center text-gray-600">
+            <div className="mt-6 p-4 bg-gray-700 rounded-lg border border-gray-600">
+              <p className="text-center text-gray-200">
                 {selectedAnswer === currentQuestion.correct_answer 
                   ? "✅ Correct!" 
                   : `❌ Incorrect. The correct answer was: ${currentQuestion.correct_answer}`
                 }
               </p>
-              <p className="text-center text-sm text-gray-500 mt-2">
+              
+              {/* Show explanation when answer is wrong */}
+              {selectedAnswer !== currentQuestion.correct_answer && currentQuestion.explanation && (
+                <div className="mt-4 p-3 bg-blue-900 border border-blue-700 rounded-lg">
+                  <p className="text-sm font-medium text-blue-200 mb-1">Why this is the correct answer:</p>
+                  <p className="text-sm text-blue-100">{currentQuestion.explanation}</p>
+                </div>
+              )}
+              
+              <p className="text-center text-sm text-gray-400 mt-2">
                 {bothAnswered
                   ? (currentQuestionIndex < questions.length - 1 
                       ? "Moving to next question..." 
@@ -264,8 +297,8 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
               </p>
               {!bothAnswered && (
                 <div className="mt-3 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-                  <span className="text-sm text-blue-600">Waiting for opponent...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400 mr-2"></div>
+                  <span className="text-sm text-blue-400">Waiting for opponent...</span>
                 </div>
               )}
             </div>
@@ -273,12 +306,12 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-gray-800 rounded-lg shadow-md p-4 mb-6 border border-gray-700">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-600">Progress</span>
-            <span className="text-sm text-gray-500">{currentQuestionIndex + 1}/{questions.length}</span>
+            <span className="text-sm font-medium text-gray-300">Progress</span>
+            <span className="text-sm text-gray-400">{currentQuestionIndex + 1}/{questions.length}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-700 rounded-full h-2">
             <div 
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
@@ -287,26 +320,26 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
         </div>
  
         {/* Player Status */}
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="bg-gray-800 rounded-lg shadow-md p-4 border border-gray-700">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="flex items-center justify-center mb-2">
-                <User className="w-5 h-5 text-blue-500 mr-2" />
-                <span className="font-medium text-gray-900">You</span>
+                <User className="w-5 h-5 text-blue-400 mr-2" />
+                <span className="font-medium text-white">You</span>
               </div>
               <div className={`px-3 py-1 rounded-full text-sm ${
-                isAnswered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                isAnswered ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'
               }`}>
                 {isAnswered ? 'Answered' : 'Answering...'}
               </div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center mb-2">
-                <User className="w-5 h-5 text-red-500 mr-2" />
-                <span className="font-medium text-gray-900">Opponent</span>
+                <User className="w-5 h-5 text-red-400 mr-2" />
+                <span className="font-medium text-white">Opponent</span>
               </div>
               <div className={`px-3 py-1 rounded-full text-sm ${
-                opponentAnswered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                opponentAnswered ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'
               }`}>
                 {opponentAnswered ? 'Answered' : 'Answering...'}
               </div>
@@ -315,14 +348,14 @@ const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
         </div>
 
         {/* Debug Info */}
-        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg text-xs mt-4">
-          <h3 className="font-semibold mb-2">Debug Info:</h3>
-          <p><strong>Current Question:</strong> {currentQuestionIndex + 1} (ID: {currentQuestion.id})</p>
-          <p><strong>User Answered:</strong> {isAnswered.toString()}</p>
-          <p><strong>Opponent Answered:</strong> {opponentAnswered.toString()}</p>
-          <p><strong>Both Answered:</strong> {bothAnswered.toString()}</p>
-          <p><strong>Display Time:</strong> {displayTime} seconds</p>
-          <p><strong>Selected Answer:</strong> {selectedAnswer || 'None'}</p>
+        <div className="bg-gray-800 border border-gray-600 p-4 rounded-lg text-xs mt-4">
+          <h3 className="font-semibold mb-2 text-gray-200">Debug Info:</h3>
+          <p className="text-gray-300"><strong>Current Question:</strong> {currentQuestionIndex + 1} (ID: {currentQuestion.id})</p>
+          <p className="text-gray-300"><strong>User Answered:</strong> {isAnswered.toString()}</p>
+          <p className="text-gray-300"><strong>Opponent Answered:</strong> {opponentAnswered.toString()}</p>
+          <p className="text-gray-300"><strong>Both Answered:</strong> {bothAnswered.toString()}</p>
+          <p className="text-gray-300"><strong>Display Time:</strong> {displayTime} seconds</p>
+          <p className="text-gray-300"><strong>Selected Answer:</strong> {selectedAnswer || 'None'}</p>
         </div>
       </div>
     </div>

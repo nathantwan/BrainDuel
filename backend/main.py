@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from database import get_db, create_tables
 from models import User, ClassFolder# Import your models
 # from routes import notes, folders, auth, battles  # Import your routes
-from routes import folders, notes, battles, auth  # Import your routes
+from routes import folders, notes, battles, auth, dashboard  # Import your routes
 # Lifespan manager for startup/shutdown events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -58,6 +58,7 @@ app.include_router(folders.router)
 app.include_router(notes.router)
 app.include_router(battles.router)
 app.include_router(auth.router)
+app.include_router(dashboard.router)
 
 # Test endpoint to verify models work
 @app.get("/test-db")
