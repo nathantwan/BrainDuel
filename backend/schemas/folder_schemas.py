@@ -1,30 +1,48 @@
-from pydantic import BaseModel, ConfigDict
-from datetime import datetime
+from pydantic import BaseModel, Field
 from typing import Optional, List
+from datetime import datetime
+from enum import Enum
 from uuid import UUID
 
+class FolderVisibility(str, Enum):
+    PUBLIC = "public"
+    PRIVATE = "private"
+
 class CreateFolderRequest(BaseModel):
-    name: str
-    description: Optional[str] = None
-    course_code: Optional[str] = None
-    university_name: Optional[str] = None
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    university_name: Optional[str] = Field(None, max_length=100)
+    course_code: Optional[str] = Field(None, max_length=20)
     is_public: bool = False
 
 class FolderResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    
-    id: UUID
-    owner_id: UUID
+    id: str
     name: str
-    description: Optional[str] = None
-    course_code: Optional[str] = None
-    university_name: Optional[str] = None
-    question_count: int = 0
+    description: Optional[str]
+    university_name: Optional[str]
+    course_code: Optional[str]
     is_public: bool
     created_at: datetime
     updated_at: datetime
+    user_id: str
+    question_count: Optional[int] = 0
 
+    class Config:
+        from_attributes = True
 
+class UpdateFolderRequest(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    university_name: Optional[str] = Field(None, max_length=100)
+    course_code: Optional[str] = Field(None, max_length=20)
+    is_public: Optional[bool] = None
+
+class FolderListResponse(BaseModel):
+    folders: List[FolderResponse]
+    total: int
+
+    class Config:
+        from_attributes = True
 
 class QuestionOptionResponse(BaseModel):
     id: UUID
@@ -33,8 +51,7 @@ class QuestionOptionResponse(BaseModel):
     is_correct: bool
 
     class Config:
-        orm_mode = True
-
+        from_attributes = True
 
 class QuestionResponse(BaseModel):
     id: UUID
@@ -50,4 +67,4 @@ class QuestionResponse(BaseModel):
     options: Optional[List[QuestionOptionResponse]] = []  # Include options list
 
     class Config:
-        orm_mode = True
+        from_attributes = True
