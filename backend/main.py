@@ -29,7 +29,11 @@ app = FastAPI(
 # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your Next.js URL
+    allow_origins=[
+        "http://localhost:3000",  # Development
+        "https://brainduel.vercel.app",  # Production frontend
+        "https://*.vercel.app",  # Any Vercel subdomain
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
