@@ -1,22 +1,62 @@
+import os
+import sys
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 
-from database import get_db, create_tables
-from models import User, ClassFolder# Import your models
-# from routes import notes, folders, auth, battles  # Import your routes
-from routes import folders, notes, battles, auth, dashboard  # Import your routes
+# Debug startup information
+print("🚀 Brain Duel Backend Starting...")
+print(f"Python version: {sys.version}")
+print(f"Current working directory: {os.getcwd()}")
+
+# Check environment variables
+print("\n📋 Environment Variables:")
+env_vars = ['DATABASE_URL', 'SECRET_KEY', 'HOST', 'PORT']
+for var in env_vars:
+    value = os.getenv(var)
+    if value:
+        # Mask sensitive values
+        if 'password' in var.lower() or 'secret' in var.lower() or 'key' in var.lower():
+            print(f"  {var}: {'*' * len(value)}")
+        else:
+            print(f"  {var}: {value}")
+    else:
+        print(f"  {var}: NOT SET")
+
+try:
+    from database import get_db, create_tables
+    print("✅ Database module imported successfully")
+except Exception as e:
+    print(f"❌ Database module import failed: {e}")
+    raise e
+
+try:
+    from models import User, ClassFolder
+    print("✅ Models imported successfully")
+except Exception as e:
+    print(f"❌ Models import failed: {e}")
+    raise e
+
+try:
+    from routes import folders, notes, battles, auth, dashboard
+    print("✅ Routes imported successfully")
+except Exception as e:
+    print(f"❌ Routes import failed: {e}")
+    raise e
 # Lifespan manager for startup/shutdown events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Brain Duel API...")
     try:
+        print("📊 Attempting to create database tables...")
         create_tables()  # Create database tables
-        print("✅ Database tables created")
+        print("✅ Database tables created successfully")
     except Exception as e:
         print(f"❌ Failed to create tables: {e}")
+        print(f"❌ Error type: {type(e).__name__}")
+        print(f"❌ Error details: {str(e)}")
         raise e
     yield
     # Shutdown
