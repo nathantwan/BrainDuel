@@ -33,7 +33,8 @@ engine = create_engine(
         "keepalives": 1,       # Enable TCP keepalive
         "keepalives_idle": 30, # TCP idle time before keepalive probe
         "keepalives_interval": 10, # Time between keepalive probes
-        "keepalives_count": 5  # Number of keepalive probes before dropping
+        "keepalives_count": 5, # Number of keepalive probes before dropping
+        "sslmode": "require"   # Require SSL for Railway PostgreSQL
     } if DATABASE_URL.startswith('postgresql') else {}
 )
 
@@ -62,15 +63,23 @@ def get_db():
 # Improved table creation with existence check
 def create_tables():
     try:
+        print("🔍 Checking database connection...")
+        with engine.connect() as conn:
+            conn.execute("SELECT 1")
+        print("✅ Database connection successful")
+        
         with engine.begin() as connection:
             if not connection.dialect.has_table(connection, "users"):
+                print("📊 Creating database tables...")
                 Base.metadata.create_all(bind=engine)
                 print("✅ Tables created successfully")
             else:
                 print("✅ Tables already exist")
     except Exception as e:
         print(f"❌ Error creating tables: {e}")
-        raise e
+        print(f"❌ Error type: {type(e).__name__}")
+        # Don't raise the exception, just log it
+        print("⚠️  Table creation failed, but continuing...")
 
 # Optional: Connection health check
 def check_db_connection():
