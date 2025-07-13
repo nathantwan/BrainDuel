@@ -3,7 +3,6 @@ import sys
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from contextlib import asynccontextmanager
 
 # Debug startup information
 print("🚀 Brain Duel Backend Starting...")
@@ -44,26 +43,6 @@ try:
 except Exception as e:
     print(f"❌ Routes import failed: {e}")
     raise e
-# Lifespan manager for startup/shutdown events
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    print("🚀 Starting Brain Duel API...")
-    try:
-        print("📊 Attempting to create database tables...")
-        create_tables()  # Create database tables
-        print("✅ Database tables created successfully")
-    except Exception as e:
-        print(f"❌ Failed to create tables: {e}")
-        print(f"❌ Error type: {type(e).__name__}")
-        print(f"❌ Error details: {str(e)}")
-        # Don't raise the exception, just log it and continue
-        print("⚠️  Continuing startup despite table creation error...")
-    
-    print("✅ FastAPI app startup completed")
-    yield
-    # Shutdown
-    print("🛑 Shutting down Brain Duel API...")
 
 # Create FastAPI app
 app = FastAPI(
@@ -92,15 +71,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    try:
-        # Simple health check without database dependency
-        return {
-            "status": "healthy",
-            "message": "Brain Duel API is operational",
-            "timestamp": "2024-01-01T00:00:00Z"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Health check failed: {str(e)}")
+    return {"status": "healthy", "message": "Brain Duel API is operational"}
 
 @app.get("/health/db")
 async def health_check_db(db: Session = Depends(get_db)):
