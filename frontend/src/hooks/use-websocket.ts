@@ -1,4 +1,4 @@
-import { WebSocketMessage } from '../types/battle'; // Adjust the import path as necessary
+import { WebSocketMessage } from '../types/websocket'; // Adjust the import path as necessary
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 export const useWebSocket = (userId: string | null) => {
@@ -37,7 +37,7 @@ export const useWebSocket = (userId: string | null) => {
   const connect = useCallback(() => {
     if (!userId || ws.current?.readyState === WebSocket.OPEN) return;
 
-    const wsUrl = `${process.env.REACT_APP_WS_URL || 'ws://localhost:8000'}/battles/ws/${userId}`;
+    const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'}/battles/ws/${userId}`;
     ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => {
