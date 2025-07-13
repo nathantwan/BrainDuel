@@ -2,6 +2,8 @@
 
 **AI-Powered Learning Battles - Transform your study materials into competitive knowledge battles!**
 
+🌐 **Live Demo**: [https://brainduel-tau.vercel.app/](https://brainduel-tau.vercel.app/)
+
 BrainDuel is a modern web application that combines AI-powered question generation with real-time competitive learning. Upload your study materials, generate personalized questions, and challenge friends in epic knowledge battles.
 
 ## ✨ Features

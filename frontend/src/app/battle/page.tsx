@@ -7,17 +7,14 @@ import {
 } from 'lucide-react';
 import { useBattles } from '../../hooks/use-battles';
 import type { CreateBattleRequest } from '../../types/battle';
-import { authService } from '../../services/auth';
-import type { User as UserType } from '../../types/auth';
+import { useAuth } from '../../hooks/use-auth';
+import type { CreateBattleTabProps, JoinBattleTabProps } from '../../types/ui';
 import { useFolders } from '../../hooks/use-folders';
 import type { FolderResponse } from '../../types/file';
-import type { CreateBattleTabProps, JoinBattleTabProps } from '../../types/ui';
-
 
 const BattleHub = () => {
   const router = useRouter()
-  const [user, setUser] = useState<UserType | null>(null)
-  const [userLoading, setUserLoading] = useState(true)
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth()
   const [activeTab, setActiveTab] = useState<'join' | 'create'>('join');
   
   // Use the battle hooks
@@ -33,37 +30,12 @@ const BattleHub = () => {
     fetchBattles();
   }, [fetchBattles]);
 
-  const fetchUserData = async () => {
-    try {
-      setUserLoading(true);
-      
-      // First check if user is authenticated
-      const isAuthenticated = await authService.initializeAuth()
-      
-      if (!isAuthenticated) {
-        router.push('/auth')
-        return
-      }
-
-      // Try to get user from local storage first (instant UI)
-      const userFromStorage = authService.getCurrentUserFromStorage()
-      if (userFromStorage) {
-        setUser(userFromStorage)
-      }
-
-      // Then fetch fresh user data from API
-      const freshUserData = await authService.getCurrentUser()
-      setUser(freshUserData)
-    } catch (error) {
-      console.error('Failed to fetch user:', error)
-      authService.clearAuth()
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
       router.push('/auth')
-    } finally {
-      setUserLoading(false);
+      return
     }
-  }
-
-
+  }, [isAuthenticated, user, router])
 
   const handleCreateBattle = async (battleData: CreateBattleRequest) => {
     if (!user) return;
@@ -79,33 +51,24 @@ const BattleHub = () => {
     }
   };
 
-
-
-
-
   const handleLogout = async () => {
     try {
-      await authService.clearAuth();
+      await logout();
       router.push('/auth');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
   // Fetch battles when user is available - but we'll only show invites now
   useEffect(() => {
-    if (user) {
+    if (user && isAuthenticated) {
       memoizedFetchBattles();
     }
-  }, [user, memoizedFetchBattles]);
+  }, [user, isAuthenticated, memoizedFetchBattles]);
 
   // Show loading state while fetching user
-  if (userLoading || !user) {
+  if (authLoading || !user || !isAuthenticated) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
         <div className="text-center">

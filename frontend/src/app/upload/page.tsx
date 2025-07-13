@@ -287,10 +287,10 @@ export default function UploadNotesPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl font-bold text-white mb-2">
             Transform Your Notes into Questions ✨
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-300 max-w-2xl mx-auto">
             Upload your study materials and let our AI create personalized exam questions.
           </p>
         </div>
@@ -298,9 +298,9 @@ export default function UploadNotesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* File Upload Section */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <Upload className="h-5 w-5 mr-2 text-blue-600" />
+            <div className="bg-gray-800 rounded-2xl shadow-xl p-6 border border-gray-700">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <Upload className="h-5 w-5 mr-2 text-blue-400" />
                 Upload Your Notes
               </h3>
 
@@ -315,10 +315,10 @@ export default function UploadNotesPage() {
                   <div className="bg-blue-100 p-4 rounded-full mb-4">
                     <Upload className="h-8 w-8 text-blue-600" />
                   </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h4 className="text-lg font-semibold text-white mb-2">
                     {dragActive ? 'Drop your files here' : 'Drag and drop files'}
                   </h4>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-300 mb-4">
                     Or click to browse your computer
                   </p>
                   <input

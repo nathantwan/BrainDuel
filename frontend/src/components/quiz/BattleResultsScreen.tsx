@@ -1,10 +1,11 @@
 import React from 'react';
 import { Trophy, Clock, Target, Award, Users, ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '../../hooks/use-auth';
 import type { BattleResultsScreenProps } from '../../types/ui';
 
 const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPlayAgain, onBackToHub }) => {
-  const router = useRouter();
+  const { user } = useAuth();
+  const currentUserId = user?.id;
   
   // Determine if current user is challenger or opponent
   const isChallenger = results.challenger.username === 'You' || results.challenger.username === 'Current User';
@@ -36,143 +37,138 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const getScoreColor = (score: number) => {
+    const percentage = (score / results.total_questions) * 100;
+    if (percentage >= 80) return 'text-green-400';
+    if (percentage >= 60) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <button
-            onClick={onBackToHub}
-            className="flex items-center text-gray-300 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Battle Hub
-          </button>
-          
-          <div className="flex items-center justify-center mb-4">
-            <Trophy className="w-16 h-16 text-yellow-500 mr-4" />
-            <h1 className="text-4xl font-bold text-white">Battle Complete!</h1>
-          </div>
-          
-          {/* Winner Announcement */}
-          <div className="mb-6">
+          <div className="flex justify-center mb-4">
             {isTie ? (
-              <div className="bg-gray-700 rounded-lg p-4 border border-gray-600">
-                <h2 className="text-2xl font-bold text-yellow-400 mb-2">It's a Tie!</h2>
-                <p className="text-gray-300">Both players performed equally well</p>
+              <div className="bg-gradient-to-r from-yellow-600 to-orange-600 p-4 rounded-full">
+                <Trophy className="h-12 w-12 text-white" />
               </div>
             ) : isWinner ? (
-              <div className="bg-green-900 rounded-lg p-4 border border-green-700">
-                <h2 className="text-2xl font-bold text-green-400 mb-2">🎉 You Won! 🎉</h2>
-                <p className="text-green-200">Congratulations on your victory!</p>
-                <p className="text-green-300 text-sm mt-1">
-                  Reason: {getWinnerReasonText(results.winner_reason)}
-                </p>
+              <div className="bg-gradient-to-r from-yellow-600 to-orange-600 p-4 rounded-full">
+                <Trophy className="h-12 w-12 text-white" />
               </div>
             ) : (
-              <div className="bg-red-900 rounded-lg p-4 border border-red-700">
-                <h2 className="text-2xl font-bold text-red-400 mb-2">Better Luck Next Time</h2>
-                <p className="text-red-200">Keep practicing and try again!</p>
-                <p className="text-red-300 text-sm mt-1">
-                  Reason: {getWinnerReasonText(results.winner_reason)}
-                </p>
+              <div className="bg-gradient-to-r from-gray-600 to-gray-700 p-4 rounded-full">
+                <Award className="h-12 w-12 text-white" />
               </div>
             )}
           </div>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            {isTie ? 'It\'s a Tie!' : isWinner ? 'Victory!' : 'Defeat'}
+          </h1>
+          <p className="text-gray-300 text-lg">
+            {isTie 
+              ? 'Both players performed equally well!' 
+              : isWinner 
+                ? 'Congratulations! You won this battle!' 
+                : 'Better luck next time!'
+            }
+          </p>
         </div>
 
-        {/* Score Comparison */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Current Player */}
-          <div className={`bg-gray-800 rounded-lg p-6 border-2 ${
-            isWinner ? 'border-green-500' : isTie ? 'border-yellow-500' : 'border-gray-600'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">You</h3>
-              {isWinner && <Award className="w-6 h-6 text-green-400" />}
-              {isTie && <Award className="w-6 h-6 text-yellow-400" />}
+        {/* Results Card */}
+        <div className="bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-700 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Current Player */}
+            <div className={`text-center p-6 rounded-xl border-2 ${
+              isWinner ? 'border-green-500 bg-green-900/20' : 
+              isTie ? 'border-yellow-500 bg-yellow-900/20' : 
+              'border-gray-600 bg-gray-700/50'
+            }`}>
+              <div className="flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-blue-400 mr-2" />
+                <h3 className="text-xl font-bold text-white">You</h3>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-400 text-sm">Score</p>
+                  <p className={`text-2xl font-bold ${getScoreColor(currentPlayer.score)}`}>
+                    {currentPlayer.score}/{results.total_questions}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-400 text-sm">Correct Answers</p>
+                  <p className="text-xl font-semibold text-white">
+                    {currentPlayer.correct_answers}/{results.total_questions}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-400 text-sm">Average Time</p>
+                  <p className="text-lg font-medium text-white flex items-center justify-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {formatTime(currentPlayer.average_time_seconds)}
+                  </p>
+                </div>
+              </div>
             </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Score:</span>
-                <span className="text-2xl font-bold text-white">{currentPlayer.score}</span>
+
+            {/* Opponent */}
+            <div className="text-center p-6 rounded-xl border-2 border-gray-600 bg-gray-700/50">
+              <div className="flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-purple-400 mr-2" />
+                <h3 className="text-xl font-bold text-white">{opponent.username}</h3>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Accuracy:</span>
-                <span className="text-white font-medium">{currentPlayer.accuracy}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Correct:</span>
-                <span className="text-white">{currentPlayer.correct_answers}/{currentPlayer.total_answers}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Avg Time:</span>
-                <span className="text-white">{formatTime(currentPlayer.average_time)}</span>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-400 text-sm">Score</p>
+                  <p className={`text-2xl font-bold ${getScoreColor(opponent.score, results.max_score)}`}>
+                    {opponent.score}/{results.max_score}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-400 text-sm">Correct Answers</p>
+                  <p className="text-xl font-semibold text-white">
+                    {opponent.correct_answers}/{results.total_questions}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-400 text-sm">Average Time</p>
+                  <p className="text-lg font-medium text-white flex items-center justify-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {formatTime(opponent.average_time_seconds)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Opponent */}
-          <div className={`bg-gray-800 rounded-lg p-6 border-2 ${
-            !isWinner && !isTie ? 'border-green-500' : isTie ? 'border-yellow-500' : 'border-gray-600'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Opponent</h3>
-              {!isWinner && !isTie && <Award className="w-6 h-6 text-green-400" />}
-              {isTie && <Award className="w-6 h-6 text-yellow-400" />}
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Score:</span>
-                <span className="text-2xl font-bold text-white">{opponent.score}</span>
+          {/* Battle Summary */}
+          <div className="mt-8 pt-6 border-t border-gray-700">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-gray-400 text-sm">Total Questions</p>
+                <p className="text-xl font-semibold text-white">{results.total_questions}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Accuracy:</span>
-                <span className="text-white font-medium">{opponent.accuracy}%</span>
+              <div>
+                <p className="text-gray-400 text-sm">Battle Duration</p>
+                <p className="text-xl font-semibold text-white flex items-center justify-center">
+                  <Clock className="h-4 w-4 mr-1" />
+                  {formatTime(results.battle_duration_seconds)}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Correct:</span>
-                <span className="text-white">{opponent.correct_answers}/{opponent.total_answers}</span>
+              <div>
+                <p className="text-gray-400 text-sm">Winner Reason</p>
+                <p className="text-lg font-medium text-blue-400">
+                  {getWinnerReasonText(results.winner_reason)}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Avg Time:</span>
-                <span className="text-white">{formatTime(opponent.average_time)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Battle Statistics */}
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-            <Target className="w-5 h-5 mr-2 text-blue-400" />
-            Battle Statistics
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{results.total_questions}</div>
-              <div className="text-sm text-gray-400">Total Questions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">
-                {currentPlayer.correct_answers + opponent.correct_answers}
-              </div>
-              <div className="text-sm text-gray-400">Total Correct</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">
-                {Math.round((currentPlayer.correct_answers + opponent.correct_answers) / (results.total_questions * 2) * 100)}%
-              </div>
-              <div className="text-sm text-gray-400">Overall Accuracy</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-400">
-                {formatTime(Math.max(currentPlayer.total_time, opponent.total_time))}
-              </div>
-              <div className="text-sm text-gray-400">Longest Time</div>
             </div>
           </div>
         </div>
@@ -180,19 +176,18 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            onClick={onBackToHub}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+            onClick={onPlayAgain}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center"
           >
-            <Users className="w-5 h-5 mr-2" />
-            Back to Battle Hub
+            <Target className="h-5 w-5 mr-2" />
+            Play Again
           </button>
-          
           <button
-            onClick={() => router.push('/dashboard')}
-            className="px-8 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center justify-center"
+            onClick={onBackToHub}
+            className="border-2 border-gray-600 text-gray-300 px-8 py-3 rounded-xl font-semibold hover:border-gray-500 hover:bg-gray-800 transition-all flex items-center justify-center"
           >
-            <Target className="w-5 h-5 mr-2" />
-            Go to Dashboard
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Hub
           </button>
         </div>
       </div>

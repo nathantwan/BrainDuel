@@ -14,13 +14,12 @@ import {
   Settings
 } from 'lucide-react'
 import { User as UserIcon } from 'lucide-react'
-import { User } from '../../types/auth'
-import { authService } from '../../services/auth'
+import { useAuth } from '../../hooks/use-auth'
 import { dashboardService, UserStats, RecentActivity } from '../../services/dashboard'
 
 export default function Dashboard() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth()
   const [stats, setStats] = useState<UserStats>({
     totalNotes: 0,
     totalBattles: 0,
@@ -36,62 +35,33 @@ export default function Dashboard() {
   })
   
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
-  const [loading, setLoading] = useState(true)
-
-
 
   useEffect(() => {
-     const fetchUserData = async () => {
-      try {
-        // First check if user is authenticated
-        const isAuthenticated = await authService.initializeAuth()
-        
-        if (!isAuthenticated) {
-          router.push('/auth')
-          return
-        }
-
-        // Try to get user from local storage first (instant UI)
-        const userFromStorage = authService.getCurrentUserFromStorage()
-        if (userFromStorage) {
-          setUser(userFromStorage)
-        }
-
-        // Then fetch fresh user data from API
-        const freshUserData = await authService.getCurrentUser()
-        setUser(freshUserData)
-        
-        // Ensure we have a valid token before fetching dashboard data
-        if (authService.hasToken()) {
-          // Add a small delay to ensure authentication is properly set up
-          await new Promise(resolve => setTimeout(resolve, 100))
-          
-          // Fetch dashboard data
-          try {
-            const dashboardData = await dashboardService.getDashboardData()
-            setStats(dashboardData.stats)
-            setRecentActivity(dashboardData.recentActivity)
-          } catch (error) {
-            console.error('Failed to fetch dashboard data:', error)
-            // Keep default stats if dashboard data fails
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error)
-        authService.clearAuth()
+    const fetchDashboardData = async () => {
+      if (!isAuthenticated || !user) {
         router.push('/auth')
-      } finally {
-        setLoading(false)
+        return
+      }
+
+      try {
+        // Fetch dashboard data
+        const dashboardData = await dashboardService.getDashboardData()
+        setStats(dashboardData.stats)
+        setRecentActivity(dashboardData.recentActivity)
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error)
+        // Keep default stats if dashboard data fails
       }
     }
 
-    fetchUserData()
-  }, [router]) // Make sure to include router in dependencies
-
+    if (!authLoading) {
+      fetchDashboardData()
+    }
+  }, [isAuthenticated, user, authLoading, router])
 
   const handleLogout = async () => {
     try {
-      await authService.logout()
+      await logout()
       router.push('/auth')
     } catch (error) {
       console.error('Logout failed:', error)
@@ -110,19 +80,11 @@ export default function Dashboard() {
     router.push('/battle')
   }
 
-  const navigateToProfile = () => {
-    router.push('/profile')
-  }
-
-  const navigateToSettings = () => {
-    router.push('/settings')
-  }
-
-  if (!user || loading) {
+  if (authLoading || !user || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
           <p className="text-gray-300">Loading your dashboard...</p>
         </div>
       </div>
@@ -135,7 +97,6 @@ export default function Dashboard() {
       <header className="bg-gray-800 shadow-sm border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-blue-800 to-purple-900 p-2 rounded-full">
                 <img src="/icons/brainduel1.svg" alt="BrainDuel" className="h-16 w-16" />
@@ -143,27 +104,20 @@ export default function Dashboard() {
               <h1 className="text-xl font-bold text-white">BrainDuel</h1>
             </div>
 
-            {/* User Menu */}
             <div className="flex items-center space-x-4">
+              <button className="flex items-center space-x-2 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
+                <UserIcon className="h-5 w-5" />
+                <span className="hidden sm:block font-medium">{user.username}</span>
+              </button>
               <button className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
                 <Bell className="h-5 w-5" />
               </button>
-              <button 
-                onClick={navigateToProfile}
-                className="flex items-center space-x-2 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
-              >
-                <UserIcon className="h-5 w-5" />
-                <span className="hidden sm:block font-medium">{user?.username || 'User'}</span>
-              </button>
-              <button 
-                onClick={navigateToSettings}
-                className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
-              >
+              <button className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
                 <Settings className="h-5 w-5" />
               </button>
               <button 
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"
+                className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900 transition-colors"
               >
                 <LogOut className="h-5 w-5" />
               </button>
@@ -172,7 +126,6 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -236,7 +189,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Main Action Cards */}
+        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Upload Notes */}
           <button
@@ -348,7 +301,13 @@ export default function Dashboard() {
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-400">No recent activity yet. Start by uploading notes or joining a battle!</p>
+                <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-400">No recent activity</p>
+                <p className="text-sm text-gray-500">Start uploading notes and battling to see your activity here</p>
               </div>
             )}
           </div>
