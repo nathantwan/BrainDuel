@@ -69,8 +69,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Brain Duel API",
     description="AI-powered exam generator with battle features",
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.0.0"
 )
 
 # CORS middleware for frontend integration
