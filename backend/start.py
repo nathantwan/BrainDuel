@@ -23,17 +23,22 @@ for var in env_vars:
 print("\n🎯 Starting server...")
 if __name__ == "__main__":
     import uvicorn
-    from decouple import config
     
-    host = config('HOST', default='0.0.0.0')
-    port = int(config('PORT', default=8000))
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', 8000))
     
     print(f"📍 Server will be available at: http://{host}:{port}")
+    print(f"🔧 Using port: {port}")
     
-    uvicorn.run(
-        "main:app",
-        host=host,
-        port=port,
-        reload=False,  # Disable reload in production
-        log_level="info"
-    ) 
+    try:
+        uvicorn.run(
+            "main:app",
+            host=host,
+            port=port,
+            reload=False,  # Disable reload in production
+            log_level="info"
+        )
+    except Exception as e:
+        print(f"❌ Failed to start server: {e}")
+        import traceback
+        traceback.print_exc() 
