@@ -29,6 +29,23 @@ class FolderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+    @classmethod
+    def from_orm(cls, obj):
+        # Convert UUID to string and handle field mapping
+        data = {
+            "id": str(obj.id),
+            "name": obj.name,
+            "description": obj.description,
+            "university_name": obj.university_name,
+            "course_code": obj.course_code,
+            "is_public": obj.is_public,
+            "created_at": obj.created_at,
+            "updated_at": obj.updated_at,
+            "user_id": str(obj.owner_id),  # Map owner_id to user_id
+            "question_count": getattr(obj, 'question_count', 0)
+        }
+        return cls(**data)
 
 class UpdateFolderRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
