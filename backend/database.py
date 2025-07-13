@@ -65,16 +65,13 @@ def create_tables():
     try:
         print("🔍 Checking database connection...")
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            from sqlalchemy import text
+            conn.execute(text("SELECT 1"))
         print("✅ Database connection successful")
         
-        with engine.begin() as connection:
-            if not connection.dialect.has_table(connection, "users"):
-                print("📊 Creating database tables...")
-                Base.metadata.create_all(bind=engine)
-                print("✅ Tables created successfully")
-            else:
-                print("✅ Tables already exist")
+        print("📊 Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tables created successfully")
     except Exception as e:
         print(f"❌ Error creating tables: {e}")
         print(f"❌ Error type: {type(e).__name__}")
@@ -85,7 +82,8 @@ def create_tables():
 def check_db_connection():
     try:
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            from sqlalchemy import text
+            conn.execute(text("SELECT 1"))
         return True
     except Exception as e:
         print(f"Database connection failed: {e}")
