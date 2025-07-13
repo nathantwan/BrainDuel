@@ -87,6 +87,39 @@ async def health_check_db(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database connection failed: {str(e)}")
 
+@app.post("/setup-db")
+async def setup_database():
+    try:
+        # Create tables
+        create_tables()
+        
+        # Run Alembic migrations
+        import subprocess
+        import os
+        
+        # Change to backend directory and run migrations
+        os.chdir("/app")
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            return {
+                "status": "success",
+                "message": "Database setup completed",
+                "migration_output": result.stdout
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Migration failed",
+                "error": result.stderr
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database setup failed: {str(e)}")
+
 # Include your route modules
 app.include_router(folders.router)
 app.include_router(notes.router)
