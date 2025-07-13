@@ -12,8 +12,12 @@ from routes import folders, notes, battles, auth, dashboard  # Import your route
 async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Brain Duel API...")
-    create_tables()  # Create database tables
-    print("✅ Database tables created")
+    try:
+        create_tables()  # Create database tables
+        print("✅ Database tables created")
+    except Exception as e:
+        print(f"❌ Failed to create tables: {e}")
+        raise e
     yield
     # Shutdown
     print("🛑 Shutting down Brain Duel API...")

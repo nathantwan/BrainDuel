@@ -61,12 +61,16 @@ def get_db():
 
 # Improved table creation with existence check
 def create_tables():
-    with engine.begin() as connection:
-        if not connection.dialect.has_table(connection, "your_main_table_name"):
-            Base.metadata.create_all(bind=engine)
-            print("Tables created successfully")
-        else:
-            print("Tables already exist")
+    try:
+        with engine.begin() as connection:
+            if not connection.dialect.has_table(connection, "users"):
+                Base.metadata.create_all(bind=engine)
+                print("✅ Tables created successfully")
+            else:
+                print("✅ Tables already exist")
+    except Exception as e:
+        print(f"❌ Error creating tables: {e}")
+        raise e
 
 # Optional: Connection health check
 def check_db_connection():
