@@ -7,10 +7,10 @@ import { authService } from '../../../services/auth';
 import BattleWaitingScreen from '../../../components/quiz/BattleWaitingScreen';
 import BattleGameScreen from '../../../components/quiz/BattleGameScreen';
 import BattleResultsScreen from '../../../components/quiz/BattleResultsScreen';
-import { Battle, BattleQuestion, BattleResult } from '../../../types/battle';
+import { Battle, BattleQuestion } from '../../../types/battle';
 import { WebSocketMessage } from '../../../types/websocket';
-
-type BattleState = 'waiting' | 'loading' | 'playing' | 'completed';
+import type { BattleState } from '../../../types/ui';
+import type { User } from '../../../types/auth';
 
 const BattlePage = () => {
   const params = useParams();
@@ -555,7 +555,6 @@ const BattlePage = () => {
     return (
       <BattleResultsScreen
         results={battleResults}
-        currentUserId={user?.id || ''}
         onBackToHub={() => router.push('/battle')}
       />
     );

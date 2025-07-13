@@ -1,19 +1,6 @@
 import { LucideIcon } from 'lucide-react'
 import { Eye, EyeOff } from 'lucide-react'
-
-interface InputFieldProps {
-  id: string
-  label: string
-  type: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  placeholder: string
-  icon: LucideIcon
-  error?: string
-  hasPasswordToggle?: boolean
-  showPassword?: boolean
-  onTogglePassword?: () => void
-}
+import type { InputFieldProps } from '../../types/ui'
 
 export function InputField({
   id,

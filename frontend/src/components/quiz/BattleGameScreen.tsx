@@ -1,29 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, Trophy, User } from 'lucide-react';
-
-interface BattleQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correct_answer: string;
-  explanation?: string;
-  time_limit_seconds: number;
-}
-
-interface BattleGameScreenProps {
-  battleId: string;
-  questions: BattleQuestion[];
-  onAnswerSubmit: (questionId: string, answer: string) => void;
-  onBattleComplete?: (results: any) => void;
-  onOpponentAnswered?: any;
-  onQuestionCompleted?: any;
-  onQuestionStart?: () => void;
-  onTimerPause?: () => void;
-  onTimerResume?: () => void;
-  getCurrentTime?: () => number;
-  currentScore?: number;
-  opponentScore?: number;
-}
+import type { BattleGameScreenProps } from '../../types/ui';
 
 const BattleGameScreen: React.FC<BattleGameScreenProps> = ({
   battleId,

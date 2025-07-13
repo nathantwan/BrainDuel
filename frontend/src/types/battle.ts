@@ -73,10 +73,3 @@ export interface BattleStatus {
   completed_at: string | null;
   winner_id: string | null;
 }
-
-
-
-export interface WebSocketMessage {
-  type: string;
-  [key: string]: any;
-}

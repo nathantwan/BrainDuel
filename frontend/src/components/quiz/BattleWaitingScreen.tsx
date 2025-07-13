@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Users, Copy, Check } from 'lucide-react';
-
-interface BattleWaitingScreenProps {
-  battleId: string;
-  opponentUsername?: string;
-  roomCode?: string;
-  isPublic?: boolean;
-  onCancel?: () => void;
-  wsConnected?: boolean;
-}
+import type { BattleWaitingScreenProps } from '../../types/ui';
 
 const BattleWaitingScreen: React.FC<BattleWaitingScreenProps> = ({
   battleId,

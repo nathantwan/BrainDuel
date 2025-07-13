@@ -1,25 +1,7 @@
-import { QuestionResponse } from './file';
-// Base types for file uploads
-export interface UploadProgress {
-  file: File
-  progress: number
-  status: 'pending' | 'uploading' | 'completed' | 'error'
-  error?: string
-}
+import { QuestionResponse, UploadProgress, UploadResponse } from './file';
 
-// API Response types
-export interface UploadResponse {
-  message: string
-  folder_id: string
-  uploaded_files: {
-    filename: string
-    size: number
-    status: string
-  }[]
-  temp_note_ids: string[]
-}
-
-
+// Re-export types for convenience
+export type { UploadProgress, UploadResponse };
 
 export interface GenerateQuestionsResponse {
   questions: QuestionResponse[]

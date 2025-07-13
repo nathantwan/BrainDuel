@@ -6,11 +6,12 @@ import {
   Settings, LogOut, Bell
 } from 'lucide-react';
 import { useBattles } from '../../hooks/use-battles';
-import type { Battle, CreateBattleRequest } from '../../types/battle';
+import type { CreateBattleRequest } from '../../types/battle';
 import { authService } from '../../services/auth';
 import type { User as UserType } from '../../types/auth';
 import { useFolders } from '../../hooks/use-folders';
 import type { FolderResponse } from '../../types/file';
+import type { CreateBattleTabProps, JoinBattleTabProps } from '../../types/ui';
 
 
 const BattleHub = () => {
@@ -195,11 +196,6 @@ const BattleHub = () => {
   );
 };
 
-interface JoinBattleTabProps {
-  joinBattle: (roomCode: string) => Promise<Battle>;
-  loading: boolean;
-}
-
 const JoinBattleTab: React.FC<JoinBattleTabProps> = ({ 
   joinBattle,
   loading
@@ -292,11 +288,6 @@ const JoinBattleTab: React.FC<JoinBattleTabProps> = ({
     </div>
   );
 };
-
-interface CreateBattleTabProps {
-  onCreateBattle: (data: CreateBattleRequest) => Promise<any>;
-  loading: boolean;
-}
 
 const CreateBattleTab: React.FC<CreateBattleTabProps> = ({ 
   onCreateBattle,

@@ -1,46 +1,9 @@
 import React from 'react';
 import { Trophy, Clock, Target, Award, Users, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import type { BattleResultsScreenProps } from '../../types/ui';
 
-interface BattleResults {
-  battle_id: string;
-  battle_status: string;
-  total_questions: number;
-  challenger: {
-    username: string;
-    score: number;
-    correct_answers: number;
-    total_answers: number;
-    accuracy: number;
-    average_time: number;
-    total_time: number;
-  };
-  opponent: {
-    username: string;
-    score: number;
-    correct_answers: number;
-    total_answers: number;
-    accuracy: number;
-    average_time: number;
-    total_time: number;
-  };
-  winner_id: string | null;
-  winner_reason: string;
-  completed_at: string | null;
-  started_at: string | null;
-}
-
-interface BattleResultsScreenProps {
-  results: BattleResults;
-  currentUserId: string;
-  onBackToHub: () => void;
-}
-
-const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({
-  results,
-  currentUserId,
-  onBackToHub
-}) => {
+const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPlayAgain, onBackToHub }) => {
   const router = useRouter();
   
   // Determine if current user is challenger or opponent
