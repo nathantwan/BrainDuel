@@ -40,7 +40,7 @@ class Battle(Base):
         ),
     )
 class BattleAnswerResponse(Base):
-    __tablename__ = 'battle_answer_responses'
+    __tablename__ = 'battle_responses'
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     battle_id = Column(UUID(as_uuid=True), ForeignKey('battles.id', ondelete='CASCADE'), nullable=False)
