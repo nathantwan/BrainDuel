@@ -57,6 +57,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Development
         "https://brainduel.vercel.app",  # Production frontend
+        "https://brainduel-tau.vercel.app",  # Your current frontend
         "https://*.vercel.app",  # Any Vercel subdomain
     ],
     allow_credentials=True,
