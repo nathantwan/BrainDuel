@@ -239,6 +239,24 @@ const BattlePage = () => {
     }
   }, [user?.id, addMessageHandler, handleWebSocketMessage]);
 
+  // Function to cleanup WebSocket handlers
+  const cleanupWebSocketHandlers = useCallback(() => {
+    console.log('=== CLEANING UP WEBSOCKET HANDLERS ===');
+    removeMessageHandler('BATTLE_STARTED');
+    removeMessageHandler('BATTLE_ACCEPTED');
+    removeMessageHandler('PLAYER_JOINED');
+    removeMessageHandler('ROOM_JOINED');
+    removeMessageHandler('OPPONENT_JOINED');
+    removeMessageHandler('BATTLE_READY');
+    removeMessageHandler('BATTLE_COMPLETED');
+    removeMessageHandler('opponent_answered');
+    removeMessageHandler('OPPONENT_ANSWERED');
+    removeMessageHandler('opponent_activity');
+    removeMessageHandler('OPPONENT_ACTIVITY');
+    removeMessageHandler('question_completed');
+    removeMessageHandler('QUESTION_COMPLETED');
+  }, [removeMessageHandler]);
+
   // Set up WebSocket message handling
   useEffect(() => {
     if (wsConnected && user?.id) {
@@ -255,9 +273,10 @@ const BattlePage = () => {
       return () => {
         console.log('=== CLEANING UP CONNECTION LISTENER ===');
         removeConnectionListener(registerWebSocketHandlers);
+        cleanupWebSocketHandlers();
       };
     }
-  }, [user?.id, addConnectionListener, removeConnectionListener, registerWebSocketHandlers]);
+  }, [user?.id, addConnectionListener, removeConnectionListener, registerWebSocketHandlers, cleanupWebSocketHandlers]);
 
   // Fallback polling for opponent activity when WebSocket is down
   useEffect(() => {
@@ -492,8 +511,9 @@ const BattlePage = () => {
       if (battleStatusInterval.current) {
         clearInterval(battleStatusInterval.current);
       }
+      cleanupWebSocketHandlers();
     };
-  }, []);
+  }, [cleanupWebSocketHandlers]);
 
   // Render logic
   if (battleState === 'loading') {
