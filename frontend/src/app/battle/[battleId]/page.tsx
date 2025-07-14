@@ -228,7 +228,6 @@ const BattlePage = () => {
       addMessageHandler('OPPONENT_JOINED', handleWebSocketMessage);
       addMessageHandler('BATTLE_READY', handleWebSocketMessage);
       addMessageHandler('BATTLE_COMPLETED', handleWebSocketMessage);
-      addMessageHandler('battle_completed', handleWebSocketMessage);
       addMessageHandler('opponent_answered', handleWebSocketMessage);
       addMessageHandler('OPPONENT_ANSWERED', handleWebSocketMessage);
       addMessageHandler('opponent_activity', handleWebSocketMessage);
@@ -433,6 +432,12 @@ const BattlePage = () => {
   };
 
   const handleBattleComplete = async (results: any) => {
+    // Prevent multiple calls to battle complete
+    if (battleState === 'completed') {
+      console.log('Battle already completed, ignoring duplicate call');
+      return;
+    }
+    
     console.log('=== BATTLE COMPLETED ===');
     console.log('Results:', results);
     

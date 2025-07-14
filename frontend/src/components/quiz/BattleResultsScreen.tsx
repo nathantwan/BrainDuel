@@ -8,13 +8,26 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
   const currentUserId = user?.id;
   
   // Determine if current user is challenger or opponent
-  const isChallenger = results.challenger.username === 'You' || results.challenger.username === 'Current User';
+  // Check if the challenger's username matches the current user's username
+  const isChallenger = results.challenger.username === user?.username;
   const currentPlayer = isChallenger ? results.challenger : results.opponent;
   const opponent = isChallenger ? results.opponent : results.challenger;
   
   // Determine winner information
   const isWinner = results.winner_id === currentUserId;
   const isTie = results.winner_reason === 'complete_tie';
+  
+  // Safety check - if user is not loaded yet, show loading state
+  if (!user || !currentUserId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Loading battle results...</p>
+        </div>
+      </div>
+    );
+  }
   
   const getWinnerReasonText = (reason: string) => {
     switch (reason) {
@@ -42,6 +55,16 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
     if (percentage >= 80) return 'text-green-400';
     if (percentage >= 60) return 'text-yellow-400';
     return 'text-red-400';
+  };
+
+  // Calculate battle duration if we have start and end times
+  const getBattleDuration = () => {
+    if (results.started_at && results.completed_at) {
+      const startTime = new Date(results.started_at).getTime();
+      const endTime = new Date(results.completed_at).getTime();
+      return Math.floor((endTime - startTime) / 1000); // Convert to seconds
+    }
+    return 0;
   };
 
   return (
@@ -110,7 +133,7 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
                   <p className="text-gray-400 text-sm">Average Time</p>
                   <p className="text-lg font-medium text-white flex items-center justify-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    {formatTime(currentPlayer.average_time_seconds)}
+                    {formatTime(currentPlayer.average_time)}
                   </p>
                 </div>
               </div>
@@ -126,8 +149,8 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
               <div className="space-y-3">
                 <div>
                   <p className="text-gray-400 text-sm">Score</p>
-                  <p className={`text-2xl font-bold ${getScoreColor(opponent.score, results.max_score)}`}>
-                    {opponent.score}/{results.max_score}
+                  <p className={`text-2xl font-bold ${getScoreColor(opponent.score)}`}>
+                    {opponent.score}/{results.total_questions}
                   </p>
                 </div>
                 
@@ -142,7 +165,7 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
                   <p className="text-gray-400 text-sm">Average Time</p>
                   <p className="text-lg font-medium text-white flex items-center justify-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    {formatTime(opponent.average_time_seconds)}
+                    {formatTime(opponent.average_time)}
                   </p>
                 </div>
               </div>
@@ -160,7 +183,7 @@ const BattleResultsScreen: React.FC<BattleResultsScreenProps> = ({ results, onPl
                 <p className="text-gray-400 text-sm">Battle Duration</p>
                 <p className="text-xl font-semibold text-white flex items-center justify-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  {formatTime(results.battle_duration_seconds)}
+                  {formatTime(getBattleDuration())}
                 </p>
               </div>
               <div>
