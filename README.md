@@ -1,118 +1,74 @@
-# BrainDuel 🧠⚔️
+# BrainDuel
 
-**AI-Powered Learning Battles - Transform your study materials into competitive knowledge battles!**
+A web app for learning with friends. Upload study notes, get AI-generated questions, and battle your friends to see who knows it better.
 
-🌐 **Live Demo**: [https://brainduel-tau.vercel.app/](https://brainduel-tau.vercel.app/)
+Live at: [https://brainduel-tau.vercel.app/](https://brainduel-tau.vercel.app/)
 
-BrainDuel is a modern web application that combines AI-powered question generation with real-time competitive learning. Upload your study materials, generate personalized questions, and challenge friends in epic knowledge battles.
+## What You Can Do
 
-## ✨ Features
+- Upload PDFs, docs, images, or text and generate quiz questions with AI
+- Battle friends in real-time. Each player answers questions and scores points
+- Create private battles with room codes or join public ones
+- Organize your study materials in folders
+- Share folders with friends or keep them private
 
-### 🎯 Core Functionality
-- **AI-Powered Question Generation**: Upload notes, textbooks, or study materials and let our AI create challenging, relevant questions
-- **Real-Time Battles**: Challenge friends or join public battles with live competition
-- **Competitive Scoring**: Earn points based on accuracy, speed, and difficulty
-- **Live Score Tracking**: See scores update in real-time during battles
-- **Question Synchronization**: Both players must answer before moving to the next question
+## Stack
 
-### 🎮 Battle System
-- **Room Code System**: Create private battles with unique room codes
-- **Battle Invitations**: Send and receive battle invitations
-- **Real-Time WebSocket Communication**: Instant updates and synchronization
-- **Comprehensive Results**: Detailed battle statistics and winner determination
-- **Tie-Breaker System**: Fair winner determination with multiple criteria
+**Frontend**: Next.js, TypeScript, Tailwind CSS, WebSocket  
+**Backend**: FastAPI, SQLAlchemy, PostgreSQL, Groq API for question generation
 
-### 📚 Study Management
-- **Folder Organization**: Organize study materials by subject, course, or topic
-- **Multiple File Support**: Upload PDFs, Word docs, text files, images, and more
-- **Public/Private Folders**: Share study materials or keep them private
-- **Question Customization**: Set difficulty levels and question counts
+## Setup
 
-### 🎨 User Experience
-- **Dark Mode Design**: Modern, eye-friendly interface
-- **Responsive Design**: Works seamlessly on desktop and mobile
-- **Real-Time Notifications**: Battle invitations and updates
-- **Dashboard Analytics**: Track your learning progress and battle history
-
-## 🚀 Tech Stack
-
-### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling
-- **Lucide React** - Beautiful icons
-- **WebSocket** - Real-time communication
-
-### Backend
-- **FastAPI** - Modern Python web framework
-- **SQLAlchemy** - Database ORM
-- **Alembic** - Database migrations
-- **PostgreSQL** - Reliable database
-- **WebSocket** - Real-time communication
-- **Groq API** - AI question generation
-
-## 📦 Installation & Setup
-
-### Prerequisites
+### You'll need:
 - Python 3.8+
 - Node.js 18+
-- PostgreSQL database
+- PostgreSQL
 - Groq API key
 
-### Backend Setup
+### Backend
+
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your database and API keys
+# Create .env file with:
+# DATABASE_URL=postgresql://user:password@localhost/brainduel
+# GROQ_API_KEY=your_key
+# SECRET_KEY=some_secret
 
-# Run database migrations
 alembic upgrade head
-
-# Start the backend server
 python run.py
 ```
 
-### Frontend Setup
+### Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## 🔧 Environment Variables
-
-### Backend (.env)
-```env
-DATABASE_URL=postgresql://user:password@localhost/brainduel
-GROQ_API_KEY=your_grok_api_key_here
-SECRET_KEY=your_secret_key_here
+Create `.env.local` with:
 ```
-
-### Frontend
-Create a `.env.local` file in the frontend directory:
-```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## 🎯 Usage
+## Usage
 
 ### Getting Started
-1. **Sign Up**: Create an account at `/auth`
-2. **Upload Materials**: Go to `/upload` and add your study files
-3. **Create Battle**: Visit `/battle` to start a new battle or join existing ones
-4. **Battle**: Answer questions in real-time and compete for the highest score!
+1. Sign Up: Create an account at `/auth`
+2. Upload Materials: Go to `/upload` and add your study files
+3. Create Battle: Visit `/battle` to start a new battle or join existing ones
+4. Battle: Answer questions in real-time and compete for the highest score
 
 ### Battle Flow
-1. **Create Battle**: Choose a folder and set battle parameters
-2. **Share Room Code**: Send the room code to your opponent
-3. **Join Battle**: Enter the room code to join
-4. **Answer Questions**: Both players answer simultaneously
-5. **View Results**: See detailed battle statistics and winner
+1. Create Battle: Choose a folder and set battle parameters
+2. Share Room Code: Send the room code to your opponent
+3. Join Battle: Enter the room code to join
+4. Answer Questions: Both players answer simultaneously
+5. View Results: See detailed battle statistics and winner
 
 ### Dashboard
 - View your battle history and statistics
@@ -120,7 +76,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - Manage your study folders
 - See recent activity
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 BrainDuel/
@@ -142,25 +98,10 @@ BrainDuel/
 └── README.md
 ```
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
 
-- Groq API for AI question generation
-- Next.js team for the amazing framework
-- FastAPI for the modern Python web framework
-- All contributors and beta testers
 
----
-
-**Made with ❤️ for competitive learning**
